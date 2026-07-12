@@ -33,7 +33,8 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
     odometer: "0",
     acq_cost: "",
   })
-  const [photo, setPhoto] = useState<string | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -44,8 +45,9 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
       setError("Photo must be under 5 MB.")
       return
     }
+    setPhotoFile(file)
     const reader = new FileReader()
-    reader.onload = () => setPhoto(reader.result as string)
+    reader.onload = () => setPhotoPreview(reader.result as string)
     reader.readAsDataURL(file)
   }
 
@@ -63,12 +65,14 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
     setLoading(true)
     try {
       const token = localStorage.getItem("transitops-token")
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {}),
+      }
+
       const res = await fetch(`${API_URL}/api/fleet/vehicles`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers,
         body: JSON.stringify({
           reg_no: form.reg_no,
           name_model: form.name_model,
@@ -84,10 +88,30 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
         throw new Error(data.detail || "Failed to create vehicle.")
       }
 
+      const vehicle = await res.json()
+
+      if (photoFile) {
+        const uploadHeaders: Record<string, string> = {
+          ...(token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {}),
+        }
+        const formData = new FormData()
+        formData.append("file", photoFile)
+        formData.append("entity_type", "vehicle")
+        formData.append("entity_id", String(vehicle.id))
+        formData.append("label", "document")
+
+        await fetch(`${API_URL}/api/documents/upload`, {
+          method: "POST",
+          headers: uploadHeaders,
+          body: formData,
+        })
+      }
+
       onCreated()
       onClose()
       setForm({ reg_no: "", name_model: "", type: "Van", capacity_kg: "", odometer: "0", acq_cost: "" })
-      setPhoto(null)
+      setPhotoPreview(null)
+      setPhotoFile(null)
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.")
     } finally {
@@ -218,8 +242,8 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
             />
             <div className="relative">
               <div className="flex size-20 items-center justify-center overflow-hidden rounded-full border-2 border-zinc-200 bg-white dark:border-zinc-600 dark:bg-zinc-800">
-                {photo ? (
-                  <img src={photo} alt="" className="size-full object-cover" />
+                {photoPreview ? (
+                  <img src={photoPreview} alt="" className="size-full object-cover" />
                 ) : (
                   <Camera className="size-7 text-zinc-300 dark:text-zinc-500" />
                 )}
@@ -240,7 +264,7 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
                 disabled={loading}
                 className="text-xs font-medium text-[#0080FF] hover:underline"
               >
-                {photo ? t("driverRegistry.photoChange") : t("driverRegistry.photoUpload")}
+                {photoPreview ? t("driverRegistry.photoChange") : t("driverRegistry.photoUpload")}
               </button>
               <p className="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-500">
                 {t("driverRegistry.photoHint")}
