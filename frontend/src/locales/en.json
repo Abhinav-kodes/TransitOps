@@ -13,7 +13,6 @@
     "financialAnalyst": "Financial Analyst",
     "forgotPassword": "Forgot password?",
     "loginButton": "Sign in",
-    "ssoButton": "Sign in with SSO",
     "noAccount": "No account yet?",
     "signUp": "Sign up",
     "needHelp": "Need help getting started?",
@@ -26,6 +25,7 @@
     "logout": "Logout"
   },
   "sidebar": {
+    "dashboard": "Dashboard",
     "fleet": "Fleet",
     "allVehicles": "All Vehicles",
     "liveTracking": "Live Tracking",
@@ -37,10 +37,9 @@
     "drivers": "Drivers",
     "allDrivers": "All Drivers",
     "safetyScores": "Safety Scores",
-    "documents": "Documents",
-    "finance": "Finance",
-    "fuelUsage": "Fuel Usage",
-    "costReports": "Cost Reports",
+    "trips": "Trips",
+    "fuelExpenses": "Fuel & Expenses",
+    "analytics": "Analytics",
     "settings": "Settings"
   },
   "filters": {
@@ -66,5 +65,21 @@
   "available": "Available",
   "onTrip": "On Trip",
   "inShop": "In Shop",
-  "retired": "Retired"
+  "retired": "Retired",
+  "registry": {
+    "title": "Vehicle Registry",
+    "subtitle": "Manage and track all vehicles in your fleet.",
+    "typeAll": "Type: All",
+    "statusAll": "Status: All",
+    "searchPlaceholder": "Search reg no...",
+    "addVehicle": "Add Vehicle",
+    "regNo": "REG. NO. (UNIQUE)",
+    "nameModel": "NAME/MODEL",
+    "type": "TYPE",
+    "capacity": "CAPACITY",
+    "odometer": "ODOMETER",
+    "acqCost": "ACQ. COST",
+    "status": "STATUS",
+    "systemNote": "Note: Registration No. must be unique • Retired/In Shop vehicles are hidden from Trip Dispatcher"
+  }
 }

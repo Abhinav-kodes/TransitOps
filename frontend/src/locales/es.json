@@ -13,7 +13,6 @@
     "financialAnalyst": "Analista Financiero",
     "forgotPassword": "¿Olvidó su contraseña?",
     "loginButton": "Iniciar sesión",
-    "ssoButton": "Iniciar con SSO",
     "noAccount": "¿No tiene una cuenta?",
     "signUp": "Registrarse",
     "needHelp": "¿Necesita ayuda para comenzar?",
@@ -26,6 +25,7 @@
     "logout": "Cerrar sesión"
   },
   "sidebar": {
+    "dashboard": "Panel",
     "fleet": "Flota",
     "allVehicles": "Todos los Vehículos",
     "liveTracking": "Rastreo en Vivo",
@@ -37,10 +37,9 @@
     "drivers": "Conductores",
     "allDrivers": "Todos los Conductores",
     "safetyScores": "Puntuaciones de Seguridad",
-    "documents": "Documentos",
-    "finance": "Finanzas",
-    "fuelUsage": "Consumo de Combustible",
-    "costReports": "Informes de Costos",
+    "trips": "Viajes",
+    "fuelExpenses": "Combustible y Gastos",
+    "analytics": "Analíticas",
     "settings": "Configuración"
   },
   "filters": {
@@ -66,5 +65,21 @@
   "available": "Disponible",
   "onTrip": "En Viaje",
   "inShop": "En Taller",
-  "retired": "Retirado"
+  "retired": "Retirado",
+  "registry": {
+    "title": "Registro de Vehículos",
+    "subtitle": "Administre y rastree todos los vehículos de su flota.",
+    "typeAll": "Tipo: Todos",
+    "statusAll": "Estado: Todos",
+    "searchPlaceholder": "Buscar reg. no...",
+    "addVehicle": "Agregar Vehículo",
+    "regNo": "REG. NO. (ÚNICO)",
+    "nameModel": "NOMBRE/MODELO",
+    "type": "TIPO",
+    "capacity": "CAPACIDAD",
+    "odometer": "ODÓMETRO",
+    "acqCost": "COSTO ADQ.",
+    "status": "ESTADO",
+    "systemNote": "Nota: El Número de Registro debe ser único • Los vehículos Retirados/En Taller están ocultos del Despachador de Viajes"
+  }
 }
