@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/select"
 import i18n from "@/lib/i18n"
 import { useAuth } from "@/lib/auth"
-import loginBadges from "@/assets/login_badges.webp"
 import geminiLogo from "@/assets/TT-removebg-preview.png"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
@@ -141,8 +140,8 @@ export default function LoginPage() {
         <div className="mx-auto max-w-lg px-12 py-16">
           <div className="mb-8 inline-block">
             <img
-              src={loginBadges}
-              alt="Enterprise Leader Badge"
+              src={geminiLogo}
+              alt="TransitOps"
               className="h-20 w-auto rounded-xl object-contain"
             />
           </div>
