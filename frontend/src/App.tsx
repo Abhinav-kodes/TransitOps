@@ -1,10 +1,30 @@
-import './App.css'
+import { useState } from "react"
+import { ThemeProvider } from "@/lib/theme"
+import "@/lib/i18n"
+import LoginPage from "./pages/LoginPage"
+import DashboardPage from "./pages/DashboardPage"
 
 function App() {
+  const [loggedIn, setLoggedIn] = useState(false)
+
+  if (!loggedIn) {
+    return (
+      <ThemeProvider>
+        <LoginPage />
+        <button
+          onClick={() => setLoggedIn(true)}
+          className="fixed bottom-6 right-6 z-50 rounded border border-zinc-200 bg-white px-4 py-2 text-xs font-medium text-zinc-600 shadow-sm transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+        >
+          Skip to Dashboard →
+        </button>
+      </ThemeProvider>
+    )
+  }
+
   return (
-    <>
-    Hello World!
-    </>
+    <ThemeProvider>
+      <DashboardPage />
+    </ThemeProvider>
   )
 }
 
