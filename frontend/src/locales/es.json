@@ -1,0 +1,70 @@
+{
+  "app": "TransitOps",
+  "login": {
+    "title": "Iniciar sesión en TransitOps",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "nombre@empresa.com",
+    "password": "Contraseña",
+    "role": "Rol",
+    "selectRole": "Seleccione su rol",
+    "fleetManager": "Gerente de Flota",
+    "dispatcher": "Despachador",
+    "safetyOfficer": "Oficial de Seguridad",
+    "financialAnalyst": "Analista Financiero",
+    "forgotPassword": "¿Olvidó su contraseña?",
+    "loginButton": "Iniciar sesión",
+    "ssoButton": "Iniciar con SSO",
+    "noAccount": "¿No tiene una cuenta?",
+    "signUp": "Registrarse",
+    "needHelp": "¿Necesita ayuda para comenzar?",
+    "contactSupport": "Contactar Soporte",
+    "orCall": "o llame al +1 (800) 555-0199"
+  },
+  "dashboard": {
+    "title": "Resumen de Flota",
+    "subtitle": "Monitoree el rendimiento y las operaciones de su flota en tiempo real.",
+    "logout": "Cerrar sesión"
+  },
+  "sidebar": {
+    "fleet": "Flota",
+    "allVehicles": "Todos los Vehículos",
+    "liveTracking": "Rastreo en Vivo",
+    "maintenance": "Mantenimiento",
+    "dispatch": "Despacho",
+    "activeDispatches": "Despachos Activos",
+    "createDispatch": "Crear Despacho",
+    "routeOptimization": "Optimización de Rutas",
+    "drivers": "Conductores",
+    "allDrivers": "Todos los Conductores",
+    "safetyScores": "Puntuaciones de Seguridad",
+    "documents": "Documentos",
+    "finance": "Finanzas",
+    "fuelUsage": "Consumo de Combustible",
+    "costReports": "Informes de Costos",
+    "settings": "Configuración"
+  },
+  "filters": {
+    "region": "Región",
+    "vehicleType": "Tipo de Vehículo",
+    "dateRange": "Rango de Fechas",
+    "allRegions": "Todas las Regiones",
+    "allTypes": "Todos los Tipos",
+    "allDates": "Todas las Fechas",
+    "last7days": "Últimos 7 Días",
+    "last30days": "Últimos 30 Días",
+    "last90days": "Últimos 90 Días"
+  },
+  "kpi": {
+    "fleetUtilization": "Utilización de Flota",
+    "onTimeDelivery": "Entregas a Tiempo",
+    "safetyIncidents": "Incidentes de Seguridad",
+    "totalTrips": "Total de Viajes",
+    "avgFuelEfficiency": "Eficiencia Promedio de Combustible"
+  },
+  "recentTrips": "Viajes Recientes",
+  "vehicleStatus": "Estado de Vehículos",
+  "available": "Disponible",
+  "onTrip": "En Viaje",
+  "inShop": "En Taller",
+  "retired": "Retirado"
+}

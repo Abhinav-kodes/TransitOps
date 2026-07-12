@@ -1,0 +1,70 @@
+{
+  "app": "TransitOps",
+  "login": {
+    "title": "Sign in to TransitOps",
+    "email": "Email",
+    "emailPlaceholder": "name@company.com",
+    "password": "Password",
+    "role": "Role",
+    "selectRole": "Select your role",
+    "fleetManager": "Fleet Manager",
+    "dispatcher": "Dispatcher",
+    "safetyOfficer": "Safety Officer",
+    "financialAnalyst": "Financial Analyst",
+    "forgotPassword": "Forgot password?",
+    "loginButton": "Sign in",
+    "ssoButton": "Sign in with SSO",
+    "noAccount": "No account yet?",
+    "signUp": "Sign up",
+    "needHelp": "Need help getting started?",
+    "contactSupport": "Contact Support",
+    "orCall": "or call +1 (800) 555-0199"
+  },
+  "dashboard": {
+    "title": "Fleet Overview",
+    "subtitle": "Monitor your fleet performance and operations in real time.",
+    "logout": "Logout"
+  },
+  "sidebar": {
+    "fleet": "Fleet",
+    "allVehicles": "All Vehicles",
+    "liveTracking": "Live Tracking",
+    "maintenance": "Maintenance",
+    "dispatch": "Dispatch",
+    "activeDispatches": "Active Dispatches",
+    "createDispatch": "Create Dispatch",
+    "routeOptimization": "Route Optimization",
+    "drivers": "Drivers",
+    "allDrivers": "All Drivers",
+    "safetyScores": "Safety Scores",
+    "documents": "Documents",
+    "finance": "Finance",
+    "fuelUsage": "Fuel Usage",
+    "costReports": "Cost Reports",
+    "settings": "Settings"
+  },
+  "filters": {
+    "region": "Region",
+    "vehicleType": "Vehicle Type",
+    "dateRange": "Date Range",
+    "allRegions": "All Regions",
+    "allTypes": "All Types",
+    "allDates": "All Dates",
+    "last7days": "Last 7 Days",
+    "last30days": "Last 30 Days",
+    "last90days": "Last 90 Days"
+  },
+  "kpi": {
+    "fleetUtilization": "Fleet Utilization",
+    "onTimeDelivery": "On-Time Delivery",
+    "safetyIncidents": "Safety Incidents",
+    "totalTrips": "Total Trips",
+    "avgFuelEfficiency": "Avg Fuel Efficiency"
+  },
+  "recentTrips": "Recent Trips",
+  "vehicleStatus": "Vehicle Status",
+  "available": "Available",
+  "onTrip": "On Trip",
+  "inShop": "In Shop",
+  "retired": "Retired"
+}
