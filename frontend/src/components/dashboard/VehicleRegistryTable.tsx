@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, Loader2 } from "lucide-react"
+import { ChevronDown, Loader2, RefreshCw } from "lucide-react"
+import AddVehicleDialog from "./AddVehicleDialog"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
@@ -36,6 +37,7 @@ export default function VehicleRegistryTable() {
   const [typeFilter, setTypeFilter] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   const fetchVehicles = useCallback(async () => {
     setLoading(true)
@@ -110,7 +112,10 @@ export default function VehicleRegistryTable() {
           className="h-8 rounded border border-zinc-200 bg-white px-3 text-xs text-zinc-600 placeholder:text-zinc-400 focus:border-[#0080FF] focus:outline-none focus:ring-1 focus:ring-[#0080FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:placeholder:text-zinc-500"
         />
 
-        <button className="ml-auto inline-flex items-center gap-1.5 rounded bg-[#0080FF] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#006ce6]">
+        <button
+          onClick={() => setDialogOpen(true)}
+          className="ml-auto inline-flex items-center gap-1.5 rounded bg-[#0080FF] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#006ce6]"
+        >
           + {t("registry.addVehicle")}
         </button>
       </div>
@@ -179,6 +184,12 @@ export default function VehicleRegistryTable() {
           {t("registry.systemNote")}
         </p>
       </div>
+
+      <AddVehicleDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onCreated={fetchVehicles}
+      />
     </div>
   )
 }
