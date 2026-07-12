@@ -3,7 +3,9 @@ import bcrypt
 import jwt
 from datetime import datetime, timedelta, timezone
 
-SECRET_KEY = os.getenv("SECRET_KEY", "9a2f7c320d3f848529b4e5414d6438a9d18e225bb1536b9e28f3bb2511470e9a")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is not set!")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

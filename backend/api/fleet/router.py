@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import List, Optional
-from datetime import date
 
 from api.dependencies import get_db
 # Importing the existing database models from your decoupled package setup
@@ -22,8 +21,8 @@ router = APIRouter()
 async def create_vehicle(vehicle_in: VehicleCreate, db: AsyncSession = Depends(get_db)):
     """Registers a fresh fleet vehicle. Validates unique registration parameters."""
     stmt = select(Vehicle).where(Vehicle.reg_no == vehicle_in.reg_no)
-    result = await db.execute(stmt)
-    if result.scalar_one_or_none():
+    result = await db.exec(stmt)
+    if result.first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Vehicle with registration number '{vehicle_in.reg_no}' already exists."
@@ -49,15 +48,15 @@ async def list_vehicles(
     if type_filter:
         stmt = stmt.where(Vehicle.type == type_filter)
         
-    result = await db.execute(stmt)
-    return result.scalars().all()
+    result = await db.exec(stmt)
+    return result.all()
 
 @router.put("/vehicles/{vehicle_id}", response_model=VehicleResponse)
 async def update_vehicle(vehicle_id: int, vehicle_in: VehicleUpdate, db: AsyncSession = Depends(get_db)):
     """Updates internal metrics, lifecycle statuses, or manual odometer readings."""
     db_vehicle = await db.get(Vehicle, vehicle_id)
     if not db_vehicle:
-        raise HTTPException(status_code=404, detail="Vehicle asset not found.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle asset not found.")
     
     update_data = vehicle_in.model_dump(exclude_unset=True)
     for key, value in update_data.items():
@@ -75,18 +74,14 @@ async def update_vehicle(vehicle_id: int, vehicle_in: VehicleUpdate, db: AsyncSe
 async def create_driver(driver_in: DriverCreate, db: AsyncSession = Depends(get_db)):
     """Creates an active driver resource registry context profile."""
     stmt = select(Driver).where(Driver.license_no == driver_in.license_no)
-    result = await db.execute(stmt)
-    if result.scalar_one_or_none():
+    result = await db.exec(stmt)
+    if result.first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Driver with license number '{driver_in.license_no}' already registered."
         )
         
-    driver_data = driver_in.model_dump()
-    if isinstance(driver_data.get("expiry_date"), date):
-        driver_data["expiry_date"] = driver_data["expiry_date"].isoformat()
-        
-    db_driver = Driver(**driver_data, status="Available")
+    db_driver = Driver(**driver_in.model_dump(), status="Available")
     db.add(db_driver)
     await db.commit()
     await db.refresh(db_driver)
@@ -102,20 +97,17 @@ async def list_drivers(
     if status_filter:
         stmt = stmt.where(Driver.status == status_filter)
         
-    result = await db.execute(stmt)
-    return result.scalars().all()
+    result = await db.exec(stmt)
+    return result.all()
 
 @router.put("/drivers/{driver_id}", response_model=DriverResponse)
 async def update_driver(driver_id: int, driver_in: DriverUpdate, db: AsyncSession = Depends(get_db)):
     """Modifies operator status fields (e.g., handling suspensions or off-duty toggles)."""
     db_driver = await db.get(Driver, driver_id)
     if not db_driver:
-        raise HTTPException(status_code=404, detail="Driver record not found.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Driver record not found.")
         
     update_data = driver_in.model_dump(exclude_unset=True)
-    if isinstance(update_data.get("expiry_date"), date):
-        update_data["expiry_date"] = update_data["expiry_date"].isoformat()
-        
     for key, value in update_data.items():
         setattr(db_driver, key, value)
         

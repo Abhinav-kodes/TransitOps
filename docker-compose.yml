@@ -28,6 +28,7 @@ services:
       - ./backend:/app
     environment:
       - DATABASE_URL=postgresql+asyncpg://transitops_admin:internal_secure_pass@db:5432/transitops_prod
+      - SECRET_KEY=9a2f7c320d3f848529b4e5414d6438a9d18e225bb1536b9e28f3bb2511470e9a
     depends_on:
       db:
         condition: service_healthy

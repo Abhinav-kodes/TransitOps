@@ -1,6 +1,7 @@
 from enum import Enum
 from decimal import Decimal
 from typing import List, Optional
+from datetime import date
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Numeric, CheckConstraint, Column as SaColumn
 
@@ -49,7 +50,7 @@ class Driver(SQLModel, table=True):
     name: str = Field(max_length=100, nullable=False)
     license_no: str = Field(sa_column_kwargs={"unique": True}, index=True, nullable=False)
     category: str = Field(max_length=20, nullable=False)  # LMV, HMV
-    expiry_date: str = Field(nullable=False)
+    expiry_date: date = Field(nullable=False)
     contact_no: str = Field(max_length=20, nullable=False)
     safety_score: int = Field(default=100, nullable=False)
     status: DriverStatus = Field(default=DriverStatus.AVAILABLE, nullable=False)

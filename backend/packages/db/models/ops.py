@@ -1,6 +1,7 @@
 from enum import Enum
 from decimal import Decimal
 from typing import List, Optional
+from datetime import date
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Numeric, CheckConstraint, Column as SaColumn
 
@@ -32,6 +33,11 @@ class Trip(SQLModel, table=True):
     cargo_weight: int = Field(nullable=False)
     planned_dist: int = Field(nullable=False)
     status: TripStatus = Field(default=TripStatus.DRAFT, nullable=False)
+    toll_cost: float = Field(default=0.0, nullable=False)
+
+    @property
+    def planned_distance(self) -> int:
+        return self.planned_dist
 
     # Relationships
     vehicle: Optional["Vehicle"] = Relationship(back_populates="trips")
@@ -45,7 +51,7 @@ class MaintenanceLog(SQLModel, table=True):
     vehicle_id: int = Field(foreign_key="vehicles.id", index=True, nullable=False)
     service_type: str = Field(max_length=100, nullable=False)
     cost: Decimal = Field(sa_column=SaColumn(Numeric(10, 2), nullable=False))
-    entry_date: str = Field(nullable=False)
+    entry_date: date = Field(nullable=False)
     status: MaintenanceStatus = Field(default=MaintenanceStatus.ACTIVE, nullable=False)
 
     # Relationships
