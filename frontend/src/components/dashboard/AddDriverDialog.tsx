@@ -1,16 +1,9 @@
 import { useState, useRef } from "react"
-import { X, AlertCircle, Camera } from "lucide-react"
+import { X, AlertCircle, Camera, ChevronDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
@@ -151,15 +144,18 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
               <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
                 {t("driverRegistry.category")} *
               </Label>
-              <Select.Root value={form.category} onValueChange={(val) => val && setForm({ ...form, category: val })} disabled={loading}>
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                  <SelectItem value="LMV">LMV</SelectItem>
-                  <SelectItem value="HMV">HMV</SelectItem>
-                </SelectContent>
-              </Select.Root>
+              <div className="relative">
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  disabled={loading}
+                  className="h-9 w-full appearance-none rounded border border-zinc-300 bg-white pl-3 pr-8 text-sm text-zinc-900 transition-colors hover:border-zinc-400 focus:border-[#0080FF] focus:outline-none focus:ring-1 focus:ring-[#0080FF] dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-500"
+                >
+                  <option value="LMV">LMV</option>
+                  <option value="HMV">HMV</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+              </div>
             </div>
 
             <div>
