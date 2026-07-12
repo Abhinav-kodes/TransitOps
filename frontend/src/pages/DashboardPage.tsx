@@ -1,11 +1,13 @@
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import FilterRibbon from "@/components/dashboard/FilterRibbon"
+import FilterRibbon, { DashboardFilters } from "@/components/dashboard/FilterRibbon"
 import KpiGrid from "@/components/dashboard/KpiGrid"
 import RecentTrips from "@/components/dashboard/RecentTrips"
 import VehicleStatus from "@/components/dashboard/VehicleStatus"
 
 export default function DashboardPage() {
   const { t } = useTranslation()
+  const [filters, setFilters] = useState<DashboardFilters>({ vehicleType: "all", dateRange: "all" })
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
@@ -19,19 +21,19 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-6">
-        <FilterRibbon />
+        <FilterRibbon onFilterChange={setFilters} />
       </div>
 
       <div className="mb-6">
-        <KpiGrid />
+        <KpiGrid filters={filters} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <RecentTrips />
+          <RecentTrips filters={filters} />
         </div>
         <div>
-          <VehicleStatus />
+          <VehicleStatus filters={filters} />
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import type { DashboardFilters } from "./FilterRibbon"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
@@ -17,7 +18,11 @@ const getDisplayStatus = (status: string) => {
   return status
 }
 
-export default function RecentTrips() {
+interface RecentTripsProps {
+  filters?: DashboardFilters
+}
+
+export default function RecentTrips({ filters }: RecentTripsProps) {
   const { t } = useTranslation()
   const [trips, setTrips] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -30,11 +35,21 @@ export default function RecentTrips() {
           "Content-Type": "application/json",
           ...(token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {}),
         }
-        const res = await fetch(`${API_URL}/api/operations/trips`, { headers })
-        if (res.ok) {
-          const data = await res.json()
-          const sorted = data.sort((a: any, b: any) => b.id - a.id).slice(0, 5)
-          setTrips(sorted)
+        const [tripRes, vehRes] = await Promise.all([
+          fetch(`${API_URL}/api/operations/trips`, { headers }),
+          fetch(`${API_URL}/api/fleet/vehicles`, { headers }),
+        ])
+        if (tripRes.ok && vehRes.ok) {
+          const tripData = await tripRes.json()
+          const vehData = await vehRes.json()
+          const vehicleTypeMap: Record<number, string> = {}
+          vehData.forEach((v: any) => { vehicleTypeMap[v.id] = v.type })
+
+          let filtered = tripData.sort((a: any, b: any) => b.id - a.id)
+          if (filters?.vehicleType && filters.vehicleType !== "all") {
+            filtered = filtered.filter((t: any) => t.vehicle_id && vehicleTypeMap[t.vehicle_id] === filters.vehicleType)
+          }
+          setTrips(filtered.slice(0, 5))
         }
       } catch (err) {
         console.error("Failed to load recent trips:", err)
@@ -43,7 +58,7 @@ export default function RecentTrips() {
       }
     }
     fetchRecentTrips()
-  }, [])
+  }, [filters])
 
   return (
     <div className="rounded border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/40">

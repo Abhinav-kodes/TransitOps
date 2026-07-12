@@ -207,9 +207,47 @@ async def list_trips(db: AsyncSession = Depends(get_db)):
         )
     return details
 
+@router.delete("/trips/{trip_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_roles(DISPATCHER_ONLY))])
+async def delete_trip(trip_id: int, db: AsyncSession = Depends(get_db)):
+    """Deletes a trip that is in Draft or Cancelled status."""
+    trip = await db.get(Trip, trip_id)
+    if not trip:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found.")
+    if trip.status not in ["Draft", "Cancelled"]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only Draft or Cancelled trips can be deleted.")
+    await db.delete(trip)
+    await db.commit()
+
 # =====================================================================
 # MAINTENANCE WORKFLOWS
 # =====================================================================
+
+@router.get("/maintenance", response_model=List[MaintenanceResponse], dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
+async def list_maintenance(
+    status_filter: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Lists all maintenance records, optionally filtered by status."""
+    stmt = select(MaintenanceLog)
+    if status_filter:
+        stmt = stmt.where(MaintenanceLog.status == status_filter)
+    stmt = stmt.order_by(MaintenanceLog.id.desc())
+    result = await db.exec(stmt)
+    return result.all()
+
+@router.delete("/maintenance/{log_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_roles(FLEET_MANAGER_ONLY))])
+async def delete_maintenance(log_id: int, db: AsyncSession = Depends(get_db)):
+    """Deletes a maintenance record that is Active."""
+    log = await db.get(MaintenanceLog, log_id)
+    if not log:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Maintenance log not found.")
+    if log.status == "Completed":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Completed maintenance logs cannot be deleted.")
+    vehicle = await db.get(Vehicle, log.vehicle_id)
+    if vehicle and vehicle.status == "In Shop":
+        vehicle.status = "Available"
+    await db.delete(log)
+    await db.commit()
 
 @router.post("/maintenance", response_model=MaintenanceResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles(FLEET_MANAGER_ONLY))])
 async def create_maintenance_record(log_in: MaintenanceCreate, db: AsyncSession = Depends(get_db)):

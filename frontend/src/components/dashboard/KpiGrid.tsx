@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from "recharts"
+import type { DashboardFilters } from "./FilterRibbon"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
@@ -9,7 +10,11 @@ interface DailyUtilizationItem {
   value: number
 }
 
-export default function KpiGrid() {
+interface KpiGridProps {
+  filters?: DashboardFilters
+}
+
+export default function KpiGrid({ filters }: KpiGridProps) {
   const { t } = useTranslation()
   const [data, setData] = useState({
     fleetUtilization: 87.0,
@@ -55,7 +60,7 @@ export default function KpiGrid() {
       }
     }
     fetchAnalytics()
-  }, [])
+  }, [filters])
 
   const kpis = [
     { labelKey: "kpi.fleetUtilization", value: `${data.fleetUtilization}%`, change: "+3.2%", positive: true, bar: true },

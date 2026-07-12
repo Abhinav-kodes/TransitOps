@@ -32,8 +32,8 @@ async def create_vehicle(vehicle_in: VehicleCreate, db: AsyncSession = Depends(g
             detail=f"Vehicle with registration number '{vehicle_in.reg_no}' already exists."
         )
     
-    # Initialize with default operational status 'Available'
-    db_vehicle = Vehicle(**vehicle_in.model_dump(), status="Available")
+    # Initialize with default operational status 'Available' if not specified
+    db_vehicle = Vehicle(**vehicle_in.model_dump())
     db.add(db_vehicle)
     await db.commit()
     await db.refresh(db_vehicle)
@@ -44,12 +44,15 @@ async def list_vehicles(
     status_filter: Optional[str] = Query(None, alias="status"),
     type_filter: Optional[str] = Query(None, alias="type"),
     search: Optional[str] = Query(None, alias="search"),
+    available_only: bool = Query(False, alias="available_only"),
     db: AsyncSession = Depends(get_db)
 ):
     """Fetches list of vehicles. Supports filtering for dispatch selection drops."""
     stmt = select(Vehicle)
     if status_filter:
         stmt = stmt.where(Vehicle.status == status_filter)
+    if available_only:
+        stmt = stmt.where(Vehicle.status == "Available")
     if type_filter:
         stmt = stmt.where(Vehicle.type == type_filter)
     if search:
@@ -72,6 +75,17 @@ async def update_vehicle(vehicle_id: int, vehicle_in: VehicleUpdate, db: AsyncSe
     await db.commit()
     await db.refresh(db_vehicle)
     return db_vehicle
+
+@router.delete("/vehicles/{vehicle_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_roles(FLEET_ONLY))])
+async def delete_vehicle(vehicle_id: int, db: AsyncSession = Depends(get_db)):
+    """Deletes a vehicle that is not currently on a trip."""
+    vehicle = await db.get(Vehicle, vehicle_id)
+    if not vehicle:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle asset not found.")
+    if vehicle.status == "On Trip":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete a vehicle that is currently on a trip.")
+    await db.delete(vehicle)
+    await db.commit()
 
 # =====================================================================
 # DRIVER REGISTRY ENDPOINTS
@@ -97,12 +111,15 @@ async def create_driver(driver_in: DriverCreate, db: AsyncSession = Depends(get_
 @router.get("/drivers", response_model=List[DriverResponse], dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
 async def list_drivers(
     status_filter: Optional[str] = Query(None, alias="status"),
+    available_only: bool = Query(False, alias="available_only"),
     db: AsyncSession = Depends(get_db)
 ):
     """Lists system operators. Can be filtered to locate available personnel."""
     stmt = select(Driver)
     if status_filter:
         stmt = stmt.where(Driver.status == status_filter)
+    if available_only:
+        stmt = stmt.where(Driver.status == "Available")
         
     result = await db.exec(stmt)
     return result.all()
@@ -121,3 +138,14 @@ async def update_driver(driver_id: int, driver_in: DriverUpdate, db: AsyncSessio
     await db.commit()
     await db.refresh(db_driver)
     return db_driver
+
+@router.delete("/drivers/{driver_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_roles(FLEET_AND_SAFETY))])
+async def delete_driver(driver_id: int, db: AsyncSession = Depends(get_db)):
+    """Deletes a driver that is not currently on a trip."""
+    driver = await db.get(Driver, driver_id)
+    if not driver:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Driver record not found.")
+    if driver.status == "On Trip":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete a driver that is currently on a trip.")
+    await db.delete(driver)
+    await db.commit()

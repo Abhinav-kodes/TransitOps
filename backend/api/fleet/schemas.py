@@ -14,7 +14,7 @@ class VehicleBase(BaseModel):
     acq_cost: float = Field(..., gt=0, description="Asset purchase cost for ROI calculation")
 
 class VehicleCreate(VehicleBase):
-    pass
+    status: Optional[VehicleStatus] = "Available"
 
 class VehicleUpdate(BaseModel):
     name_model: Optional[str] = None

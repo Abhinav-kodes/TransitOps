@@ -20,6 +20,7 @@ interface VehicleForm {
   capacity_kg: string
   odometer: string
   acq_cost: string
+  status: string
 }
 
 type FieldErrors = Partial<Record<keyof VehicleForm, string>>
@@ -60,6 +61,7 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
     capacity_kg: "",
     odometer: "0",
     acq_cost: "",
+    status: "Available",
   })
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
@@ -130,6 +132,7 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
           capacity_kg: parseInt(form.capacity_kg),
           odometer: parseInt(form.odometer) || 0,
           acq_cost: parseFloat(form.acq_cost),
+          status: form.status,
         }),
       })
 
@@ -159,7 +162,7 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
 
       onCreated()
       onClose()
-      setForm({ reg_no: "", name_model: "", type: "Van", capacity_kg: "", odometer: "0", acq_cost: "" })
+      setForm({ reg_no: "", name_model: "", type: "Van", capacity_kg: "", odometer: "0", acq_cost: "", status: "Available" })
       setFieldErrors({})
       setTouched({})
       setPhotoPreview(null)
@@ -303,6 +306,25 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
               {fieldErrors.acq_cost && touched.acq_cost && (
                 <p className="mt-1 text-[11px] text-red-500">{fieldErrors.acq_cost}</p>
               )}
+            </div>
+          </div>
+
+          <div>
+            <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
+              {t("registry.status")}
+            </Label>
+            <div className="relative">
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                disabled={loading}
+                className="h-9 w-full appearance-none rounded border border-zinc-300 bg-white pl-3 pr-8 text-sm text-zinc-900 transition-colors hover:border-zinc-400 focus:border-[#0080FF] focus:outline-none focus:ring-1 focus:ring-[#0080FF] dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-500"
+              >
+                <option value="Available">Available</option>
+                <option value="In Shop">In Shop</option>
+                <option value="Retired">Retired</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
             </div>
           </div>
 

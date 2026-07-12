@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
+import type { DashboardFilters } from "./FilterRibbon"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
@@ -10,7 +11,11 @@ interface StatusItem {
   color: string
 }
 
-export default function VehicleStatus() {
+interface VehicleStatusProps {
+  filters?: DashboardFilters
+}
+
+export default function VehicleStatus({ filters }: VehicleStatusProps) {
   const { t } = useTranslation()
   const [statuses, setStatuses] = useState<StatusItem[]>([
     { labelKey: "available", count: 42, color: "#10b981" },
@@ -43,7 +48,7 @@ export default function VehicleStatus() {
       }
     }
     fetchStatusCounts()
-  }, [])
+  }, [filters])
 
   return (
     <div className="rounded border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/40">
