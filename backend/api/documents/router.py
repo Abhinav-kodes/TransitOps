@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import StreamingResponse
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Literal
@@ -8,7 +8,7 @@ from api.dependencies import get_db
 from packages.db.models.fleet import Vehicle, Driver
 from packages.db.models.ops import MaintenanceLog
 from packages.db.models.finance import FuelLog, Expense
-from packages.utils.storage import upload_file, get_file_url, delete_file
+from packages.utils.storage import upload_file, get_file_data, delete_file
 
 router = APIRouter()
 
@@ -70,12 +70,16 @@ async def upload_document(
 
 @router.get("/file/{object_key:path}")
 async def download_document(object_key: str):
-    """Returns a redirect to the MinIO presigned URL for the given object key."""
+    """Reads the file from MinIO and streams it to the browser."""
     try:
-        presigned_url = get_file_url(object_key)
+        data, content_type, size = get_file_data(object_key)
     except Exception:
         raise HTTPException(status_code=404, detail="File not found.")
-    return RedirectResponse(url=presigned_url)
+    return StreamingResponse(
+        data,
+        media_type=content_type,
+        headers={"Content-Disposition": f'inline; filename="{object_key.split("/")[-1]}"'},
+    )
 
 
 @router.delete("/{object_key:path}")

@@ -47,6 +47,7 @@ services:
       - MINIO_SECRET_KEY=minioadmin
       - MINIO_SECURE=false
       - MINIO_BUCKET=transitops-documents
+      - MINIO_EXTERNAL_URL=http://localhost:9000
     depends_on:
       db:
         condition: service_healthy
