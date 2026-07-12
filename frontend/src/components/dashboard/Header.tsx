@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router-dom"
 import { Moon, Sun, Globe, Bell, LogOut, Search } from "lucide-react"
 import { useTheme } from "@/lib/theme"
 import i18n from "@/lib/i18n"
@@ -6,6 +7,7 @@ import i18n from "@/lib/i18n"
 export default function Header() {
   useTranslation()
   const { theme, toggleTheme } = useTheme()
+  const navigate = useNavigate()
 
   const cycleLang = () => {
     const langs = ["en", "es"]
@@ -16,7 +18,7 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem("transitops-token")
-    window.location.reload()
+    navigate("/login")
   }
 
   const langLabel = i18n.language === "es" ? "ES" : "EN"

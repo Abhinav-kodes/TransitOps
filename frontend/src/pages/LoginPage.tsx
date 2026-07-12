@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { CheckCircle2, Globe, AlertCircle } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,12 +39,9 @@ const ROLE_MAP: Record<string, number> = {
   financialAnalyst: 4,
 }
 
-interface LoginPageProps {
-  onLoginSuccess: () => void
-}
-
-export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
+export default function LoginPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [form, setForm] = useState<LoginFormState>({ email: "", password: "", role: "dispatcher" })
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -70,7 +68,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
     const data = await res.json()
     localStorage.setItem("transitops-token", data.access_token)
-    onLoginSuccess()
+    navigate("/dashboard")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
