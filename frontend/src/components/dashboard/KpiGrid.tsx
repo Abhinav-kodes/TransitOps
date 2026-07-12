@@ -20,6 +20,7 @@ export default function KpiGrid({ filters }: KpiGridProps) {
 
   useEffect(() => {
     const fetchAnalytics = async () => {
+      setLoading(true)
       try {
         const token = localStorage.getItem("transitops-token")
         const headers: Record<string, string> = {
@@ -47,6 +48,8 @@ export default function KpiGrid({ filters }: KpiGridProps) {
         }
       } catch (err) {
         console.error("Failed to load dashboard KPIs:", err)
+      } finally {
+        setLoading(false)
       }
     }
     fetchAnalytics()

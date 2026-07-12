@@ -12,14 +12,15 @@ interface StatusItem {
 export default function VehicleStatus() {
   const { t } = useTranslation()
   const [statuses, setStatuses] = useState<StatusItem[]>([
-    { labelKey: "available", count: 42, color: "bg-emerald-500" },
-    { labelKey: "onTrip", count: 53, color: "bg-[#0080FF]" },
-    { labelKey: "inShop", count: 5, color: "bg-amber-500" },
-    { labelKey: "retired", count: 2, color: "bg-rose-400" },
+    { labelKey: "available", count: 0, color: "bg-emerald-500" },
+    { labelKey: "onTrip", count: 0, color: "bg-[#0080FF]" },
+    { labelKey: "inShop", count: 0, color: "bg-amber-500" },
+    { labelKey: "retired", count: 0, color: "bg-rose-400" },
   ])
 
   useEffect(() => {
     const fetchStatusCounts = async () => {
+      setLoading(true)
       try {
         const token = localStorage.getItem("transitops-token")
         const headers: Record<string, string> = {
@@ -39,6 +40,8 @@ export default function VehicleStatus() {
         }
       } catch (err) {
         console.error("Failed to load vehicle statuses:", err)
+      } finally {
+        setLoading(false)
       }
     }
     fetchStatusCounts()
@@ -46,6 +49,8 @@ export default function VehicleStatus() {
 
   // Calculate total vehicles to get percentages for the progress bars
   const totalCount = statuses.reduce((acc, curr) => acc + curr.count, 0) || 1
+
+  const hasData = statuses.some((s) => s.count > 0)
 
   return (
     <div className="rounded border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/40">
