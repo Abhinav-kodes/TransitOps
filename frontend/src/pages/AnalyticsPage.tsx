@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { Loader2, TrendingUp, AlertCircle, RefreshCw } from "lucide-react"
+import { Loader2, TrendingUp, AlertCircle, RefreshCw, Download, FileText, FileSpreadsheet } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts"
+import { exportAnalytics } from "../lib/exportAnalytics"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
@@ -47,6 +48,8 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const exportRef = useRef<HTMLDivElement>(null)
 
   const fetchAnalytics = async () => {
     setLoading(true)
@@ -70,6 +73,16 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     fetchAnalytics()
+  }, [])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   if (loading) {
@@ -115,13 +128,48 @@ export default function AnalyticsPage() {
             Real-time operational KPIs, fuel efficiency, ROI index, and fleet expenditure analysis.
           </p>
         </div>
-        <button
-          onClick={fetchAnalytics}
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900"
-        >
-          <RefreshCw className="size-3.5" />
-          Refresh Report
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="relative" ref={exportRef}>
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900"
+            >
+              <Download className="size-3.5" />
+              Export
+            </button>
+            {showExportMenu && (
+              <div className="absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+                <button
+                  onClick={() => {
+                    if (data) exportAnalytics(data, "pdf")
+                    setShowExportMenu(false)
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                >
+                  <FileText className="size-3.5 text-red-500" />
+                  Export as PDF
+                </button>
+                <button
+                  onClick={() => {
+                    if (data) exportAnalytics(data, "csv")
+                    setShowExportMenu(false)
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                >
+                  <FileSpreadsheet className="size-3.5 text-emerald-500" />
+                  Export as CSV
+                </button>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={fetchAnalytics}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900"
+          >
+            <RefreshCw className="size-3.5" />
+            Refresh Report
+          </button>
+        </div>
       </div>
 
       {/* KPI Grid (Mockup top boxes) */}
