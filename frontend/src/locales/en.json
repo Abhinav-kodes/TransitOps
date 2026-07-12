@@ -80,6 +80,32 @@
     "odometer": "ODOMETER",
     "acqCost": "ACQ. COST",
     "status": "STATUS",
-    "systemNote": "Note: Registration No. must be unique • Retired/In Shop vehicles are hidden from Trip Dispatcher"
+    "systemNote": "Note: Registration No. must be unique • Retired/In Shop vehicles are hidden from Trip Dispatcher",
+    "noVehicles": "No vehicles found."
+  },
+  "driverRegistry": {
+    "title": "Driver Registry",
+    "subtitle": "Manage and track all drivers in your fleet.",
+    "addDriver": "Add Driver",
+    "statusAll": "Status: All",
+    "searchPlaceholder": "Search name or license...",
+    "name": "NAME",
+    "licenseNo": "LICENSE NO.",
+    "category": "CATEGORY",
+    "expiryDate": "EXPIRY DATE",
+    "contactNo": "CONTACT NO.",
+    "safetyScore": "SAFETY SCORE",
+    "photo": "PHOTO",
+    "photoUpload": "Upload photo",
+    "photoChange": "Change photo",
+    "photoHint": "JPG or PNG, max 5 MB",
+    "offDuty": "Off Duty",
+    "suspended": "Suspended",
+    "systemNote": "Note: License No. must be unique • Drivers with expired licenses are blocked from dispatch",
+    "noDrivers": "No drivers found."
+  },
+  "comingSoon": {
+    "title": "Coming Soon",
+    "description": "This feature is currently under development and will be available soon."
   }
 }

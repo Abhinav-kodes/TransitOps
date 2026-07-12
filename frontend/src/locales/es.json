@@ -80,6 +80,32 @@
     "odometer": "ODÓMETRO",
     "acqCost": "COSTO ADQ.",
     "status": "ESTADO",
-    "systemNote": "Nota: El Número de Registro debe ser único • Los vehículos Retirados/En Taller están ocultos del Despachador de Viajes"
+    "systemNote": "Nota: El Número de Registro debe ser único • Los vehículos Retirados/En Taller están ocultos del Despachador de Viajes",
+    "noVehicles": "No se encontraron vehículos."
+  },
+  "driverRegistry": {
+    "title": "Registro de Conductores",
+    "subtitle": "Administre y rastree todos los conductores de su flota.",
+    "addDriver": "Agregar Conductor",
+    "statusAll": "Estado: Todos",
+    "searchPlaceholder": "Buscar nombre o licencia...",
+    "name": "NOMBRE",
+    "licenseNo": "NÚM. LICENCIA",
+    "category": "CATEGORÍA",
+    "expiryDate": "FECHA VENCIMIENTO",
+    "contactNo": "NÚM. CONTACTO",
+    "safetyScore": "PUNTUACIÓN SEGURIDAD",
+    "photo": "FOTO",
+    "photoUpload": "Subir foto",
+    "photoChange": "Cambiar foto",
+    "photoHint": "JPG o PNG, máximo 5 MB",
+    "offDuty": "Fuera de Servicio",
+    "suspended": "Suspendido",
+    "systemNote": "Nota: El Número de Licencia debe ser único • Los conductores con licencia vencida están bloqueados del despacho",
+    "noDrivers": "No se encontraron conductores."
+  },
+  "comingSoon": {
+    "title": "Próximamente",
+    "description": "Esta función está actualmente en desarrollo y estará disponible pronto."
   }
 }
