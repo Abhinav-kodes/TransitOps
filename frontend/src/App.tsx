@@ -10,6 +10,7 @@ import DriverRegistryPage from "./pages/DriverRegistryPage"
 import FuelExpensesPage from "./pages/FuelExpensesPage"
 import MaintenancePage from "./pages/MaintenancePage"
 import TripsPage from "./pages/TripsPage"
+import AnalyticsPage from "./pages/AnalyticsPage"
 import ComingSoonPage from "./pages/ComingSoonPage"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -48,7 +49,7 @@ function App() {
             <Route path="trips" element={<TripsPage />} />
             <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="fuel-expenses" element={<FuelExpensesPage />} />
-            <Route path="analytics" element={<ComingSoonPage titleKey="sidebar.analytics" />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="settings" element={<ComingSoonPage titleKey="sidebar.settings" />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

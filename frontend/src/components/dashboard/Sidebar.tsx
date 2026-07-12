@@ -19,7 +19,7 @@ const NAV = [
   { labelKey: "sidebar.fuelExpenses", icon: <Fuel className="size-4" />, children: [
     { labelKey: "sidebar.allRecords", path: "/fuel-expenses" },
   ]},
-  { labelKey: "sidebar.analytics", icon: <BarChart3 className="size-4" />, comingSoon: true, path: "/analytics" },
+  { labelKey: "sidebar.analytics", icon: <BarChart3 className="size-4" />, path: "/analytics" },
   { labelKey: "sidebar.settings", icon: <Settings className="size-4" />, comingSoon: true, path: "/settings" },
 ]
 
