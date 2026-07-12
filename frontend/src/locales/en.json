@@ -157,5 +157,16 @@
     "status": "STATUS",
     "noRecords": "No maintenance records found.",
     "systemNote": "Note: In Shop vehicles are removed from the dispatch pool."
+  },
+  "settingsPage": {
+    "title": "Settings",
+    "subtitle": "System configuration and data management for TransitOps.",
+    "seedTitle": "Seed Demo Data",
+    "seedDescription": "Populate the database with realistic vehicles, drivers, trips, fuel logs, expenses, and maintenance records for demonstration purposes.",
+    "seedButton": "Seed Database",
+    "seedSuccess": "Database seeded successfully",
+    "seedError": "Failed to seed database",
+    "credentialsTitle": "Demo Login Credentials",
+    "credentialsDescription": "After seeding, use these credentials to log in as different roles."
   }
 }

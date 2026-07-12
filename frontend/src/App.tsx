@@ -11,6 +11,7 @@ import FuelExpensesPage from "./pages/FuelExpensesPage"
 import MaintenancePage from "./pages/MaintenancePage"
 import TripsPage from "./pages/TripsPage"
 import AnalyticsPage from "./pages/AnalyticsPage"
+import SettingsPage from "./pages/SettingsPage"
 import ComingSoonPage from "./pages/ComingSoonPage"
 
 const ALL_ROUTES = ["/dashboard", "/fleet/vehicles", "/drivers", "/trips", "/maintenance", "/fuel-expenses", "/analytics", "/settings"]
@@ -85,7 +86,7 @@ function App() {
               <Route path="maintenance" element={<RoleGuard><MaintenancePage /></RoleGuard>} />
               <Route path="fuel-expenses" element={<RoleGuard><FuelExpensesPage /></RoleGuard>} />
               <Route path="analytics" element={<RoleGuard><AnalyticsPage /></RoleGuard>} />
-              <Route path="settings" element={<RoleGuard><ComingSoonPage titleKey="sidebar.settings" /></RoleGuard>} />
+              <Route path="settings" element={<RoleGuard><SettingsPage /></RoleGuard>} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Routes>

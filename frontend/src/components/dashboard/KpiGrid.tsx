@@ -17,6 +17,7 @@ export default function KpiGrid({ filters }: KpiGridProps) {
     driversOnDuty: 0,
     fleetUtilization: 0,
   })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchAnalytics = async () => {

@@ -17,6 +17,7 @@ export default function VehicleStatus() {
     { labelKey: "inShop", count: 0, color: "bg-amber-500" },
     { labelKey: "retired", count: 0, color: "bg-rose-400" },
   ])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchStatusCounts = async () => {
