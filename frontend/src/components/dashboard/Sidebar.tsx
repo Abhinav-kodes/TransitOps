@@ -7,22 +7,22 @@ import { useAuth } from "@/lib/auth"
 import geminiLogo from "@/assets/TT-removebg-preview.png"
 
 const NAV = [
-  { labelKey: "sidebar.dashboard", icon: <LayoutDashboard className="size-4" />, path: "/dashboard", roles: ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"] },
+  { labelKey: "sidebar.dashboard", icon: <LayoutDashboard className="size-4" />, path: "/dashboard", roles: ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst", "Admin"] },
   { labelKey: "sidebar.fleet", icon: <Truck className="size-4" />, children: [
     { labelKey: "sidebar.allVehicles", path: "/fleet/vehicles" },
-  ], roles: ["Fleet Manager", "Dispatcher", "Safety Officer", "Financial Analyst"] },
+  ], roles: ["Fleet Manager", "Dispatcher", "Safety Officer", "Financial Analyst", "Admin"] },
   { labelKey: "sidebar.drivers", icon: <Users className="size-4" />, children: [
     { labelKey: "sidebar.allDrivers", path: "/drivers" },
-  ], roles: ["Fleet Manager", "Dispatcher", "Safety Officer", "Financial Analyst"] },
-  { labelKey: "sidebar.trips", icon: <Map className="size-4" />, path: "/trips", roles: ["Dispatcher", "Driver"] },
+  ], roles: ["Fleet Manager", "Dispatcher", "Safety Officer", "Financial Analyst", "Admin"] },
+  { labelKey: "sidebar.trips", icon: <Map className="size-4" />, path: "/trips", roles: ["Dispatcher", "Driver", "Admin"] },
   { labelKey: "sidebar.maintenance", icon: <Wrench className="size-4" />, children: [
     { labelKey: "sidebar.serviceLog", path: "/maintenance" },
-  ], roles: ["Fleet Manager", "Dispatcher", "Financial Analyst"] },
+  ], roles: ["Fleet Manager", "Dispatcher", "Financial Analyst", "Admin"] },
   { labelKey: "sidebar.fuelExpenses", icon: <Fuel className="size-4" />, children: [
     { labelKey: "sidebar.allRecords", path: "/fuel-expenses" },
-  ], roles: ["Fleet Manager", "Dispatcher", "Financial Analyst"] },
-  { labelKey: "sidebar.analytics", icon: <BarChart3 className="size-4" />, path: "/analytics", roles: ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"] },
-  { labelKey: "sidebar.settings", icon: <Settings className="size-4" />, path: "/settings", roles: ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"] },
+  ], roles: ["Fleet Manager", "Dispatcher", "Financial Analyst", "Admin"] },
+  { labelKey: "sidebar.analytics", icon: <BarChart3 className="size-4" />, path: "/analytics", roles: ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst", "Admin"] },
+  { labelKey: "sidebar.settings", icon: <Settings className="size-4" />, path: "/settings", roles: ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst", "Admin"] },
 ]
 
 export default function Sidebar() {

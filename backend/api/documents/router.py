@@ -12,7 +12,7 @@ from packages.utils.storage import upload_file, get_file_data, delete_file
 
 router = APIRouter()
 
-ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"]
+ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst", "Admin"]
 
 # Maps entity_type to (ORM model, image field name, folder in MinIO)
 ENTITY_MAP = {

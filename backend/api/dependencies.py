@@ -54,12 +54,15 @@ async def get_current_user_with_role(
 def require_roles(allowed_roles: List[str]):
     """
     Factory dependency that enforces role-based access control.
+    Admin role bypasses all checks (superuser).
     
     Usage:
         @router.get("/fleet/vehicles", dependencies=[Depends(require_roles(["Fleet Manager", "Dispatcher"]))])
     """
     async def _check_role(current_user: User = Depends(get_current_user_with_role)):
         role_name = getattr(current_user.role, "name", None)
+        if role_name and role_name.value == "Admin":
+            return current_user
         if role_name is None or role_name.value not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

@@ -16,8 +16,8 @@ from api.finance.schemas import (
 router = APIRouter()
 
 # Role constants
-FINANCIAL_ANALYST_ONLY = ["Financial Analyst"]
-ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"]
+FINANCIAL_ANALYST_ONLY = ["Financial Analyst", "Admin"]
+ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst", "Admin"]
 
 # =====================================================================
 # FUEL & EXPENSE REGISTER

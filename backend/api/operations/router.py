@@ -19,10 +19,10 @@ from api.operations.schemas import (
 router = APIRouter()
 
 # Role constants
-DISPATCHER_ONLY = ["Dispatcher"]
-DISPATCHER_AND_DRIVER = ["Dispatcher", "Driver"]
-FLEET_MANAGER_ONLY = ["Fleet Manager"]
-ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"]
+DISPATCHER_ONLY = ["Dispatcher", "Admin"]
+DISPATCHER_AND_DRIVER = ["Dispatcher", "Driver", "Admin"]
+FLEET_MANAGER_ONLY = ["Fleet Manager", "Admin"]
+ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst", "Admin"]
 
 # =====================================================================
 # ROUTE PLANNING — TOLLGURU INTEGRATION

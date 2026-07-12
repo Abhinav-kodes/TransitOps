@@ -13,9 +13,9 @@ from api.fleet.schemas import (
 router = APIRouter()
 
 # Role constants
-ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"]
-FLEET_AND_SAFETY = ["Fleet Manager", "Safety Officer"]
-FLEET_ONLY = ["Fleet Manager"]
+ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst", "Admin"]
+FLEET_AND_SAFETY = ["Fleet Manager", "Safety Officer", "Admin"]
+FLEET_ONLY = ["Fleet Manager", "Admin"]
 
 # =====================================================================
 # VEHICLES REGISTRY ENDPOINTS

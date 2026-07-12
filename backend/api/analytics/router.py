@@ -11,7 +11,7 @@ from api.analytics.schemas import DashboardAnalyticsResponse, DailyUtilization, 
 
 router = APIRouter()
 
-ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"]
+ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst", "Admin"]
 
 @router.get("/dashboard", response_model=DashboardAnalyticsResponse, dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
 async def get_dashboard_analytics(
@@ -80,7 +80,7 @@ async def get_dashboard_analytics(
     stmt_comp_t = apply_trip_filters(stmt_comp_t)
     completed_trips_res = await db.exec(stmt_comp_t)
     completed_trips = completed_trips_res.first() or 0
-    on_time_delivery = (completed_trips / total_trips * 100) if total_trips > 0 else 100.0
+    on_time_delivery = (completed_trips / total_trips * 100) if total_trips > 0 else 0.0
 
     # Dashboard-specific metric queries
     stmt_avail_v = select(func.count(Vehicle.id)).where(Vehicle.status == VehicleStatus.AVAILABLE)
@@ -129,7 +129,7 @@ async def get_dashboard_analytics(
     total_liters_res = await db.exec(select(func.sum(func.coalesce(FuelLog.liters, 0))))
     total_liters = total_liters_res.first() or 0
     
-    avg_fuel_efficiency = float(total_odometer / total_liters) if total_liters > 0 else 8.2
+    avg_fuel_efficiency = float(total_odometer / total_liters) if total_liters > 0 else 0.0
 
     # 6. Operational Cost calculation
     # Sum of FuelLogs + MaintenanceLogs + Trip Tolls
@@ -157,11 +157,11 @@ async def get_dashboard_analytics(
     total_acq_cost = acq_cost_res.first() or 0
 
     net_income = total_revenue - (float(total_maint_cost) + float(total_fuel_cost))
-    vehicle_roi = (net_income / float(total_acq_cost) * 100.0) if total_acq_cost > 0 else 14.2
+    vehicle_roi = (net_income / float(total_acq_cost) * 100.0) if total_acq_cost > 0 else 0.0
 
     # 8. Monthly Revenue distribution (based on total revenue)
     # Generate realistic monthly distribution based on actual total revenue
-    base_rev = total_revenue if total_revenue > 0 else 125000.0
+    base_rev = total_revenue if total_revenue > 0 else 0.0
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]
     multipliers = [0.8, 0.95, 0.88, 1.12, 1.05, 1.25, 1.15]
     monthly_revenue = [
@@ -188,11 +188,7 @@ async def get_dashboard_analytics(
 
     # Fallback to keep visual completeness if no logs are registered yet
     if not top_costliest:
-        top_costliest = [
-            CostliestVehicle(name="TRUCK-11", cost=18500.0),
-            CostliestVehicle(name="MINI-03", cost=9200.0),
-            CostliestVehicle(name="VAN-05", cost=6370.0),
-        ]
+        top_costliest = []
         
     # 10. Vehicle Status Counts
     status_counts = {"Available": 0, "On Trip": 0, "In Shop": 0, "Retired": 0}

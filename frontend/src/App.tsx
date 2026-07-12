@@ -13,13 +13,15 @@ import TripsPage from "./pages/TripsPage"
 import AnalyticsPage from "./pages/AnalyticsPage"
 import ComingSoonPage from "./pages/ComingSoonPage"
 
+const ALL_ROUTES = ["/dashboard", "/fleet/vehicles", "/drivers", "/trips", "/maintenance", "/fuel-expenses", "/analytics", "/settings"]
+
 const ROLE_ROUTES: Record<string, string[]> = {
   "Fleet Manager":       ["/dashboard", "/fleet/vehicles", "/drivers", "/maintenance", "/fuel-expenses", "/analytics", "/settings"],
   "Dispatcher":          ["/dashboard", "/fleet/vehicles", "/drivers", "/trips", "/maintenance", "/fuel-expenses", "/analytics", "/settings"],
   "Driver":              ["/dashboard", "/trips", "/analytics"],
   "Safety Officer":      ["/dashboard", "/fleet/vehicles", "/drivers", "/analytics", "/settings"],
   "Financial Analyst":   ["/dashboard", "/fleet/vehicles", "/drivers", "/trips", "/maintenance", "/fuel-expenses", "/analytics", "/settings"],
-  "Admin":               ["/dashboard", "/fleet/vehicles", "/drivers", "/trips", "/maintenance", "/fuel-expenses", "/analytics", "/settings"],
+  "Admin":               ALL_ROUTES,
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -31,6 +33,20 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function AccessDeniedPage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-900">
+      <div className="text-center">
+        <h1 className="text-6xl font-bold text-zinc-300 dark:text-zinc-600">403</h1>
+        <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-400">You are not allowed to access this page.</p>
+        <a href="/dashboard" className="mt-6 inline-block text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+          Go to Dashboard
+        </a>
+      </div>
+    </div>
+  )
+}
+
 function RoleGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   const path = window.location.pathname
@@ -40,7 +56,7 @@ function RoleGuard({ children }: { children: React.ReactNode }) {
 
   const allowed = ROLE_ROUTES[user.role] || ROLE_ROUTES["Driver"]
   if (!allowed.includes(path)) {
-    return <Navigate to="/dashboard" replace />
+    return <AccessDeniedPage />
   }
 
   return <>{children}</>

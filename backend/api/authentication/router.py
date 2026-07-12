@@ -6,6 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 # Explicitly importing from your existing isolated packages setup
 from packages.db import get_session
 from packages.db.models.auth import User, Role, RoleName
+from packages.db.models.fleet import Driver
 from api.authentication.schemas import UserRegister, UserResponse, RoleResponse, Token
 from api.authentication.security import get_password_hash, verify_password, create_access_token
 from api.dependencies import get_current_user
@@ -43,6 +44,7 @@ async def seed_roles(db: AsyncSession = Depends(get_session)):
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(user_in: UserRegister, db: AsyncSession = Depends(get_session)):
     """Creates a fresh system user profile securely associated with an exact role parameter."""
+
     # Check if identity vector is already occupied
     result = await db.exec(select(User).where(User.email == user_in.email))
     existing_user = result.first()
@@ -110,9 +112,27 @@ async def get_current_active_user(
     role = result_role.first()
     role_name = role.name if role else "Guest"
 
+    # Include driver info if this user has a linked driver profile
+    driver_id = None
+    driver_safety_score = None
+    driver_status = None
+    driver_license_no = None
+    if role and role.name == RoleName.DRIVER:
+        driver_res = await db.exec(select(Driver).where(Driver.user_id == current_user.id))
+        driver = driver_res.first()
+        if driver:
+            driver_id = driver.id
+            driver_safety_score = driver.safety_score
+            driver_status = driver.status.value
+            driver_license_no = driver.license_no
+
     return UserResponse(
         id=current_user.id,
         email=current_user.email,
         role_id=current_user.role_id,
         role_name=role_name,
+        driver_id=driver_id,
+        driver_safety_score=driver_safety_score,
+        driver_status=driver_status,
+        driver_license_no=driver_license_no,
     )
