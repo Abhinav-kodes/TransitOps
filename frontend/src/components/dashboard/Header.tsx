@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next"
-import { Moon, Sun, Globe, Bell } from "lucide-react"
+import { Moon, Sun, Globe, Bell, LogOut } from "lucide-react"
 import { useTheme } from "@/lib/theme"
 import i18n from "@/lib/i18n"
 
@@ -12,6 +12,11 @@ export default function Header() {
     const next = langs[(langs.indexOf(i18n.language) + 1) % langs.length]
     i18n.changeLanguage(next)
     localStorage.setItem("transitops-lang", next)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("transitops-token")
+    window.location.reload()
   }
 
   const langLabel = i18n.language === "es" ? "ES" : "EN"
@@ -34,10 +39,17 @@ export default function Header() {
       <button className="rounded p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">
         <Bell className="size-4" />
       </button>
-      <div className="ml-2 flex items-center gap-2">
+      <div className="ml-2 flex items-center gap-2 border-l border-zinc-200 pl-2 dark:border-zinc-800">
         <div className="flex size-8 items-center justify-center rounded-full bg-[#0080FF] text-xs font-semibold text-white">
           JD
         </div>
+        <button
+          onClick={handleLogout}
+          title="Sign out"
+          className="rounded p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-red-600 dark:hover:bg-zinc-800 dark:hover:text-red-400"
+        >
+          <LogOut className="size-4" />
+        </button>
       </div>
     </header>
   )

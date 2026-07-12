@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { CheckCircle2, Globe } from "lucide-react"
+import { CheckCircle2, Globe, AlertCircle } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/select"
 import i18n from "@/lib/i18n"
 import loginBadges from "@/assets/login_badges.webp"
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
 interface LoginFormState {
   email: string
@@ -29,12 +31,94 @@ const FEATURES = [
 
 const ROLES = ["fleetManager", "dispatcher", "safetyOfficer", "financialAnalyst"] as const
 
-export default function LoginPage() {
+const ROLE_MAP: Record<string, number> = {
+  fleetManager: 1,
+  dispatcher: 2,
+  safetyOfficer: 3,
+  financialAnalyst: 4,
+}
+
+interface LoginPageProps {
+  onLoginSuccess: () => void
+}
+
+export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const { t } = useTranslation()
   const [form, setForm] = useState<LoginFormState>({ email: "", password: "", role: "dispatcher" })
+  const [isSignUp, setIsSignUp] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (emailToLogin: string, passwordToLogin: string) => {
+    const params = new URLSearchParams()
+    params.append("username", emailToLogin)
+    params.append("password", passwordToLogin)
+
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params,
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.detail || "Authentication failed. Please verify your credentials.")
+    }
+
+    const data = await res.json()
+    localStorage.setItem("transitops-token", data.access_token)
+    onLoginSuccess()
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
+    setSuccess(null)
+    setLoading(true)
+
+    if (!form.email || !form.password) {
+      setError("Please fill in all required fields.")
+      setLoading(false)
+      return
+    }
+
+    try {
+      if (isSignUp) {
+        // Register flow
+        const targetRoleId = ROLE_MAP[form.role] || 2
+        const res = await fetch(`${API_URL}/api/auth/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: form.email,
+            password: form.password,
+            role_id: targetRoleId,
+          }),
+        })
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          throw new Error(data.detail || "Registration failed. Email might already be registered.")
+        }
+
+        setSuccess("Account successfully created! Logging in...")
+        
+        // Auto-login after registration
+        await handleLogin(form.email, form.password)
+      } else {
+        // Login flow
+        await handleLogin(form.email, form.password)
+      }
+    } catch (err: any) {
+      setError(err.message || "An unexpected network error occurred.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const cycleLang = () => {
@@ -103,8 +187,22 @@ export default function LoginPage() {
         <div className="flex flex-1 items-center justify-center px-12 py-8 lg:px-20">
           <div className="w-full max-w-sm">
             <h2 className="mb-6 text-2xl font-bold tracking-tight text-zinc-900">
-              {t("login.title")}
+              {isSignUp ? "Create Your Account" : t("login.title")}
             </h2>
+
+            {error && (
+              <div className="mb-4 flex items-center gap-2 rounded bg-red-50 p-3 text-xs font-medium text-red-700 border border-red-200">
+                <AlertCircle className="size-4 shrink-0 text-red-500" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {success && (
+              <div className="mb-4 flex items-center gap-2 rounded bg-emerald-50 p-3 text-xs font-medium text-emerald-700 border border-emerald-200">
+                <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+                <span>{success}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit}>
               <Label htmlFor="email" className="mb-1.5 block text-xs font-normal text-zinc-600">
@@ -112,12 +210,13 @@ export default function LoginPage() {
               </Label>
               <Input
                 id="email"
-                type="text"
+                type="email"
                 placeholder={t("login.emailPlaceholder")}
                 value={form.email}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setForm({ ...form, email: e.target.value })
                 }
+                disabled={loading}
                 className="h-10 rounded border-zinc-300 bg-white text-sm text-zinc-900 shadow-none placeholder:text-zinc-400 focus-visible:border-[#0080FF] focus-visible:ring-1 focus-visible:ring-[#0080FF]"
               />
 
@@ -132,6 +231,7 @@ export default function LoginPage() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setForm({ ...form, password: e.target.value })
                 }
+                disabled={loading}
                 className="h-10 rounded border-zinc-300 bg-white text-sm text-zinc-900 shadow-none placeholder:text-zinc-400 focus-visible:border-[#0080FF] focus-visible:ring-1 focus-visible:ring-[#0080FF]"
               />
 
@@ -141,6 +241,7 @@ export default function LoginPage() {
               <Select.Root
                 defaultValue="dispatcher"
                 onValueChange={(val: string | null) => val && setForm({ ...form, role: val })}
+                disabled={loading}
               >
                 <SelectTrigger className="h-10 w-full rounded border-zinc-300 bg-white text-sm text-zinc-900 shadow-none focus-visible:border-[#0080FF] focus-visible:ring-1 focus-visible:ring-[#0080FF]">
                   <SelectValue placeholder={t("login.selectRole")} />
@@ -154,34 +255,72 @@ export default function LoginPage() {
                 </SelectContent>
               </Select.Root>
 
-              <button
-                type="button"
-                className="mt-2 inline-block text-xs font-medium text-[#0080FF] hover:underline"
-              >
-                {t("login.forgotPassword")}
-              </button>
+              {!isSignUp && (
+                <button
+                  type="button"
+                  disabled={loading}
+                  className="mt-2 inline-block text-xs font-medium text-[#0080FF] hover:underline bg-transparent border-none p-0 cursor-pointer disabled:opacity-50"
+                >
+                  {t("login.forgotPassword")}
+                </button>
+              )}
 
               <Button
                 type="submit"
-                className="mt-6 h-10 w-full rounded bg-[#0080FF] text-sm font-medium text-white shadow-sm transition-all hover:bg-[#006ce6]"
+                disabled={loading}
+                className="mt-6 h-10 w-full rounded bg-[#0080FF] text-sm font-medium text-white shadow-sm transition-all hover:bg-[#006ce6] disabled:bg-[#0080FF]/50"
               >
-                {t("login.loginButton")}
+                {loading
+                  ? (isSignUp ? "Signing Up..." : "Logging In...")
+                  : (isSignUp ? "Sign Up" : t("login.loginButton"))}
               </Button>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-3 h-10 w-full rounded border-zinc-300 bg-white text-sm font-medium text-zinc-800 shadow-none hover:bg-zinc-50"
-              >
-                {t("login.ssoButton")}
-              </Button>
+              {!isSignUp && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={loading}
+                  className="mt-3 h-10 w-full rounded border-zinc-300 bg-white text-sm font-medium text-zinc-800 shadow-none hover:bg-zinc-50"
+                >
+                  {t("login.ssoButton")}
+                </Button>
+              )}
             </form>
 
             <p className="mt-6 block text-center text-xs text-zinc-500">
-              {t("login.noAccount")}{" "}
-              <a href="#" className="font-medium text-[#0080FF] hover:underline">
-                {t("login.signUp")}
-              </a>
+              {isSignUp ? (
+                <>
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => {
+                      setIsSignUp(false)
+                      setError(null)
+                      setSuccess(null)
+                    }}
+                    className="font-medium text-[#0080FF] hover:underline bg-transparent border-none p-0 cursor-pointer disabled:opacity-50"
+                  >
+                    Log In
+                  </button>
+                </>
+              ) : (
+                <>
+                  {t("login.noAccount")}{" "}
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => {
+                      setIsSignUp(true)
+                      setError(null)
+                      setSuccess(null)
+                    }}
+                    className="font-medium text-[#0080FF] hover:underline bg-transparent border-none p-0 cursor-pointer disabled:opacity-50"
+                  >
+                    {t("login.signUp")}
+                  </button>
+                </>
+              )}
             </p>
           </div>
         </div>
