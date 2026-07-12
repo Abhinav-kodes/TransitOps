@@ -1,23 +1,62 @@
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import AddFuelDialog from "./AddFuelDialog"
 import AddExpenseDialog from "./AddExpenseDialog"
 
-const FUEL_LOGS = [
-  { vehicle: "VAN-05", date: "05 Jul 2026", liters: "42 L", fuelCost: "3,150" },
-  { vehicle: "TRUCK-11", date: "06 Jul 2026", liters: "110 L", fuelCost: "8,400" },
-  { vehicle: "MINI-08", date: "06 Jul 2026", liters: "28 L", fuelCost: "2,050" },
-]
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
-const EXPENSES = [
-  { trip: "TR001", vehicle: "VAN-05", toll: "120", other: "0", maint: "0", total: "Available" },
-  { trip: "TR002", vehicle: "TRK-12", toll: "340", other: "150", maint: "18,000", total: "Completed" },
-]
+interface FuelLog {
+  id: number
+  vehicle_id: number
+  vehicle_name: string | null
+  date: string
+  liters: number
+  fuel_cost: number
+  fuel_bill_url: string | null
+}
+
+interface Expense {
+  id: number
+  vehicle_id: number
+  vehicle_name: string | null
+  trip_id: number | null
+  trip_code: string | null
+  toll: number
+  other: number
+  total_cost: number
+  expense_bill_url: string | null
+}
 
 export default function FuelExpensesContent() {
   const { t } = useTranslation()
   const [fuelDialogOpen, setFuelDialogOpen] = useState(false)
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false)
+  const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const token = localStorage.getItem("transitops-token")
+      const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
+      const [fuelRes, expenseRes] = await Promise.all([
+        fetch(`${API_URL}/api/finance/fuel-logs`, { headers: authHeaders }),
+        fetch(`${API_URL}/api/finance/expenses`, { headers: authHeaders }),
+      ])
+      if (fuelRes.ok) setFuelLogs(await fuelRes.json())
+      if (expenseRes.ok) setExpenses(await expenseRes.json())
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const totalCost = fuelLogs.reduce((sum, l) => sum + l.fuel_cost, 0) +
+    expenses.reduce((sum, e) => sum + e.total_cost, 0)
 
   return (
     <div className="space-y-8">
@@ -46,17 +85,27 @@ export default function FuelExpensesContent() {
               </tr>
             </thead>
             <tbody>
-              {FUEL_LOGS.map((row, i) => (
-                <tr
-                  key={i}
-                  className="border-b border-zinc-50 transition-colors hover:bg-zinc-50 dark:border-zinc-800/50 dark:hover:bg-zinc-800/30"
-                >
-                  <td className="px-5 py-3 font-medium text-zinc-900 dark:text-white">{row.vehicle}</td>
-                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.date}</td>
-                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.liters}</td>
-                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.fuelCost}</td>
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="px-5 py-8 text-center text-zinc-400">Loading...</td>
                 </tr>
-              ))}
+              ) : fuelLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-5 py-8 text-center text-zinc-400">No fuel logs yet</td>
+                </tr>
+              ) : (
+                fuelLogs.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-b border-zinc-50 transition-colors hover:bg-zinc-50 dark:border-zinc-800/50 dark:hover:bg-zinc-800/30"
+                  >
+                    <td className="px-5 py-3 font-medium text-zinc-900 dark:text-white">{row.vehicle_name || `Vehicle #${row.vehicle_id}`}</td>
+                    <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{new Date(row.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                    <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.liters} L</td>
+                    <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.fuel_cost.toLocaleString("en-IN")}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -84,32 +133,32 @@ export default function FuelExpensesContent() {
                 <th className="px-5 py-3 font-medium">{t("fuelExpensesPage.vehicle")}</th>
                 <th className="px-5 py-3 font-medium">{t("fuelExpensesPage.toll")}</th>
                 <th className="px-5 py-3 font-medium">{t("fuelExpensesPage.other")}</th>
-                <th className="px-5 py-3 font-medium">{t("fuelExpensesPage.maintLinked")}</th>
                 <th className="px-5 py-3 font-medium">{t("fuelExpensesPage.total")}</th>
               </tr>
             </thead>
             <tbody>
-              {EXPENSES.map((row, i) => (
-                <tr
-                  key={i}
-                  className="border-b border-zinc-50 transition-colors hover:bg-zinc-50 dark:border-zinc-800/50 dark:hover:bg-zinc-800/30"
-                >
-                  <td className="px-5 py-3 font-medium text-zinc-900 dark:text-white">{row.trip}</td>
-                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.vehicle}</td>
-                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.toll}</td>
-                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.other}</td>
-                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.maint}</td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                      row.total === "Available"
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                        : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                    }`}>
-                      {row.total}
-                    </span>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-8 text-center text-zinc-400">Loading...</td>
                 </tr>
-              ))}
+              ) : expenses.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-8 text-center text-zinc-400">No expenses yet</td>
+                </tr>
+              ) : (
+                expenses.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-b border-zinc-50 transition-colors hover:bg-zinc-50 dark:border-zinc-800/50 dark:hover:bg-zinc-800/30"
+                  >
+                    <td className="px-5 py-3 font-medium text-zinc-900 dark:text-white">{row.trip_code || "—"}</td>
+                    <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.vehicle_name || `Vehicle #${row.vehicle_id}`}</td>
+                    <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.toll.toLocaleString("en-IN")}</td>
+                    <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.other.toLocaleString("en-IN")}</td>
+                    <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{row.total_cost.toLocaleString("en-IN")}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -121,19 +170,19 @@ export default function FuelExpensesContent() {
           {t("fuelExpensesPage.totalOperationalCost")}
         </span>
         <span className="text-sm font-bold text-zinc-900 dark:text-white">
-          34,070
+          {totalCost.toLocaleString("en-IN")}
         </span>
       </div>
 
       <AddFuelDialog
         open={fuelDialogOpen}
         onClose={() => setFuelDialogOpen(false)}
-        onCreated={() => {}}
+        onCreated={fetchData}
       />
       <AddExpenseDialog
         open={expenseDialogOpen}
         onClose={() => setExpenseDialogOpen(false)}
-        onCreated={() => {}}
+        onCreated={fetchData}
       />
     </div>
   )

@@ -21,6 +21,19 @@ class MaintenanceResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class MaintenanceDetailResponse(BaseModel):
+    id: int
+    vehicle_id: int
+    vehicle_name: Optional[str] = None
+    service_type: str
+    cost: float
+    entry_date: date
+    status: Literal["Active", "Completed"]
+    maintenance_bill_url: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 # --- TRIP SCHEMAS ---
 TripStatus = Literal["Draft", "Dispatched", "Completed", "Cancelled"]
 

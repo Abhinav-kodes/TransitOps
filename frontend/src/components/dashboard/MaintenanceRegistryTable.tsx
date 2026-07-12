@@ -5,10 +5,15 @@ import AddMaintenanceDialog from "./AddMaintenanceDialog"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
-interface Vehicle {
+interface MaintenanceRecord {
   id: number
-  reg_no: string
-  name_model: string
+  vehicle_id: number
+  vehicle_name: string | null
+  service_type: string
+  cost: number
+  entry_date: string
+  status: "Active" | "Completed"
+  maintenance_bill_url: string | null
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -18,22 +23,22 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function MaintenanceRegistryTable() {
   const { t } = useTranslation()
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [records, setRecords] = useState<MaintenanceRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState("all")
   const [search, setSearch] = useState("")
 
-  const fetchVehicles = useCallback(async () => {
+  const fetchRecords = useCallback(async () => {
     setLoading(true)
     try {
       const token = localStorage.getItem("transitops-token")
-      const res = await fetch(`${API_URL}/api/fleet/vehicles`, {
+      const res = await fetch(`${API_URL}/api/operations/maintenance`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (res.ok) {
         const data = await res.json()
-        setVehicles(data)
+        setRecords(data)
       }
     } catch {
       // silently fail
@@ -42,11 +47,15 @@ export default function MaintenanceRegistryTable() {
     }
   }, [])
 
-  useEffect(() => { fetchVehicles() }, [fetchVehicles])
+  useEffect(() => { fetchRecords() }, [fetchRecords])
 
-  const filtered = vehicles.filter((v) =>
-    search === "" || v.reg_no.toLowerCase().includes(search.toLowerCase()) || v.name_model.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = records.filter((r) => {
+    const matchesStatus = statusFilter === "all" || r.status === statusFilter
+    const matchesSearch = search === "" ||
+      r.service_type.toLowerCase().includes(search.toLowerCase()) ||
+      (r.vehicle_name && r.vehicle_name.toLowerCase().includes(search.toLowerCase()))
+    return matchesStatus && matchesSearch
+  })
 
   return (
     <div className="rounded border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/40">
@@ -74,7 +83,7 @@ export default function MaintenanceRegistryTable() {
         />
 
         <button
-          onClick={fetchVehicles}
+          onClick={fetchRecords}
           className="rounded border border-zinc-200 p-1.5 text-zinc-400 transition-colors hover:text-zinc-700 dark:border-zinc-700 dark:hover:text-zinc-300"
           title="Refresh"
         >
@@ -115,18 +124,18 @@ export default function MaintenanceRegistryTable() {
                 </td>
               </tr>
             ) : (
-              filtered.map((v) => (
+              filtered.map((record) => (
                 <tr
-                  key={v.id}
+                  key={record.id}
                   className="border-b border-zinc-50 transition-colors hover:bg-zinc-50 dark:border-zinc-800/50 dark:hover:bg-zinc-800/30"
                 >
-                  <td className="px-5 py-3 font-medium text-zinc-900 dark:text-white">{v.reg_no}</td>
-                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{v.name_model}</td>
-                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">—</td>
-                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">—</td>
+                  <td className="px-5 py-3 font-medium text-zinc-900 dark:text-white">{record.vehicle_name || `Vehicle #${record.vehicle_id}`}</td>
+                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{record.service_type}</td>
+                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{record.cost.toLocaleString("en-IN")}</td>
+                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{new Date(record.entry_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td>
                   <td className="px-5 py-3">
-                    <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-                      —
+                    <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_COLOR[record.status] || ""}`}>
+                      {record.status}
                     </span>
                   </td>
                 </tr>
@@ -146,7 +155,7 @@ export default function MaintenanceRegistryTable() {
       <AddMaintenanceDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        onCreated={fetchVehicles}
+        onCreated={fetchRecords}
       />
     </div>
   )

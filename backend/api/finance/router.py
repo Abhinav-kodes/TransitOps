@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
+from typing import List
 
 from api.dependencies import get_db, require_roles
 from packages.db.models.fleet import Vehicle, Driver
 from packages.db.models.ops import Trip, MaintenanceLog
 from packages.db.models.finance import FuelLog, Expense
 from api.finance.schemas import (
-    FuelLogCreate, FuelLogResponse,
-    ExpenseCreate, ExpenseResponse,
+    FuelLogCreate, FuelLogResponse, FuelLogDetailResponse,
+    ExpenseCreate, ExpenseResponse, ExpenseDetailResponse,
     RoiResponse, DashboardKPIs, CostBreakdown
 )
 
@@ -36,6 +37,25 @@ async def create_fuel_log(log_in: FuelLogCreate, db: AsyncSession = Depends(get_
     await db.refresh(db_log)
     return db_log
 
+@router.get("/fuel-logs", response_model=List[FuelLogDetailResponse], dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
+async def list_fuel_logs(db: AsyncSession = Depends(get_db)):
+    """Lists all fuel logs with vehicle names."""
+    res = await db.exec(select(FuelLog).order_by(FuelLog.date.desc()))
+    logs = res.all()
+    result = []
+    for log in logs:
+        vehicle = await db.get(Vehicle, log.vehicle_id)
+        result.append(FuelLogDetailResponse(
+            id=log.id,
+            vehicle_id=log.vehicle_id,
+            vehicle_name=vehicle.name_model or vehicle.reg_no if vehicle else None,
+            date=log.date,
+            liters=log.liters,
+            fuel_cost=log.fuel_cost,
+            fuel_bill_url=log.fuel_bill_url,
+        ))
+    return result
+
 @router.post("/expenses", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles(FINANCIAL_ANALYST_ONLY))])
 async def create_expense(expense_in: ExpenseCreate, db: AsyncSession = Depends(get_db)):
     """Logs an expense record (tolls, maintenance, or other costs) for a vehicle."""
@@ -57,6 +77,31 @@ async def create_expense(expense_in: ExpenseCreate, db: AsyncSession = Depends(g
     await db.commit()
     await db.refresh(db_expense)
     return db_expense
+
+@router.get("/expenses", response_model=List[ExpenseDetailResponse], dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
+async def list_expenses(db: AsyncSession = Depends(get_db)):
+    """Lists all expenses with vehicle and trip names."""
+    res = await db.exec(select(Expense))
+    expenses = res.all()
+    result = []
+    for exp in expenses:
+        vehicle = await db.get(Vehicle, exp.vehicle_id)
+        trip_code = None
+        if exp.trip_id:
+            trip = await db.get(Trip, exp.trip_id)
+            trip_code = trip.trip_code if trip else None
+        result.append(ExpenseDetailResponse(
+            id=exp.id,
+            vehicle_id=exp.vehicle_id,
+            vehicle_name=vehicle.name_model or vehicle.reg_no if vehicle else None,
+            trip_id=exp.trip_id,
+            trip_code=trip_code,
+            toll=exp.toll,
+            other=exp.other,
+            total_cost=exp.total_cost,
+            expense_bill_url=exp.expense_bill_url,
+        ))
+    return result
 
 # =====================================================================
 # RETURN ON INVESTMENT (ROI) CALCULATOR

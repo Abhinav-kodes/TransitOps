@@ -2,6 +2,33 @@ from pydantic import BaseModel, Field
 from datetime import date
 from typing import Optional, List
 
+# --- LIST RESPONSE SCHEMAS ---
+class FuelLogDetailResponse(BaseModel):
+    id: int
+    vehicle_id: int
+    vehicle_name: Optional[str] = None
+    date: date
+    liters: float
+    fuel_cost: float
+    fuel_bill_url: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class ExpenseDetailResponse(BaseModel):
+    id: int
+    vehicle_id: int
+    vehicle_name: Optional[str] = None
+    trip_id: Optional[int] = None
+    trip_code: Optional[str] = None
+    toll: float
+    other: float
+    total_cost: float
+    expense_bill_url: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 # --- FUEL LOG SCHEMAS ---
 class FuelLogCreate(BaseModel):
     vehicle_id: int

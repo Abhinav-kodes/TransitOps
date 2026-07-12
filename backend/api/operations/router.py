@@ -12,7 +12,7 @@ from packages.db.models.ops import Trip, MaintenanceLog, TripStatus
 from packages.utils.tollguru_client import fetch_routes, resolve_vehicle_type
 from api.operations.schemas import (
     TripCreate, TripResponse, TripCompletePayload,
-    MaintenanceCreate, MaintenanceResponse, TripDetailResponse,
+    MaintenanceCreate, MaintenanceResponse, MaintenanceDetailResponse, TripDetailResponse,
     TripPlanRequest, RouteSelectionOption, TripConfirmPayload,
 )
 
@@ -230,6 +230,26 @@ async def create_maintenance_record(log_in: MaintenanceCreate, db: AsyncSession 
     await db.commit()
     await db.refresh(db_log)
     return db_log
+
+@router.get("/maintenance", response_model=List[MaintenanceDetailResponse], dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
+async def list_maintenance_records(db: AsyncSession = Depends(get_db)):
+    """Lists all maintenance records with vehicle names."""
+    res = await db.exec(select(MaintenanceLog).order_by(MaintenanceLog.entry_date.desc()))
+    logs = res.all()
+    result = []
+    for log in logs:
+        vehicle = await db.get(Vehicle, log.vehicle_id)
+        result.append(MaintenanceDetailResponse(
+            id=log.id,
+            vehicle_id=log.vehicle_id,
+            vehicle_name=vehicle.name_model or vehicle.reg_no if vehicle else None,
+            service_type=log.service_type,
+            cost=log.cost,
+            entry_date=log.entry_date,
+            status=log.status,
+            maintenance_bill_url=log.maintenance_bill_url,
+        ))
+    return result
 
 @router.put("/maintenance/{log_id}/complete", response_model=MaintenanceResponse, dependencies=[Depends(require_roles(FLEET_MANAGER_ONLY))])
 async def complete_maintenance(log_id: int, db: AsyncSession = Depends(get_db)):
