@@ -4,15 +4,164 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from datetime import date
 from typing import List
 
+import httpx
+
 from api.dependencies import get_db
 from packages.db.models.fleet import Vehicle, Driver
-from packages.db.models.ops import Trip, MaintenanceLog 
+from packages.db.models.ops import Trip, MaintenanceLog, TripStatus
+from packages.utils.tollguru_client import fetch_routes, resolve_vehicle_type
 from api.operations.schemas import (
     TripCreate, TripResponse, TripCompletePayload,
-    MaintenanceCreate, MaintenanceResponse, TripDetailResponse
+    MaintenanceCreate, MaintenanceResponse, TripDetailResponse,
+    TripPlanRequest, RouteSelectionOption, TripConfirmPayload,
 )
 
 router = APIRouter()
+
+# =====================================================================
+# ROUTE PLANNING — TOLLGURU INTEGRATION
+# =====================================================================
+
+@router.post("/trips/plan", response_model=List[RouteSelectionOption])
+async def plan_trip_routes(
+    plan_in: TripPlanRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Step 1 of 2 — Route Planning.
+
+    Performs a capacity pre-flight check, then calls TollGuru to retrieve
+    2–3 route options. Each option contains a Google-encoded `polyline`
+    ready for rendering on Google Maps, plus cost summaries for the UI cards.
+
+    No database row is created at this stage.
+    """
+    # --- Capacity pre-flight check ---
+    vehicle = await db.get(Vehicle, plan_in.vehicle_id)
+    if not vehicle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Vehicle with id {plan_in.vehicle_id} not found.",
+        )
+
+    if plan_in.cargo_weight > vehicle.capacity_kg:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                f"Capacity breach: cargo weight ({plan_in.cargo_weight} kg) "
+                f"exceeds vehicle max capacity ({vehicle.capacity_kg} kg)."
+            ),
+        )
+
+    # --- TollGuru API call ---
+    tg_vehicle_type = resolve_vehicle_type(vehicle.type)
+    try:
+        raw_routes = await fetch_routes(
+            source=plan_in.source,
+            destination=plan_in.destination,
+            tollguru_vehicle_type=tg_vehicle_type,
+            cargo_weight_kg=plan_in.cargo_weight,
+        )
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"TollGuru API error: {exc.response.status_code} — {exc.response.text[:200]}",
+        )
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"TollGuru network error: {str(exc)}",
+        )
+
+    if not raw_routes:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="TollGuru returned no routes for the given origin/destination.",
+        )
+
+    # --- Parse and transform each route ---
+    options: list[RouteSelectionOption] = []
+    for route in raw_routes:
+        summary = route.get("summary", {})
+        costs = route.get("costs", {})
+
+        route_name = summary.get("name") or "Unnamed Route"
+        labels = summary.get("labels") or []
+
+        distance_info = summary.get("distance", {})
+        distance_value = distance_info.get("value", 0)   # meters
+        distance_text = distance_info.get("text") or distance_info.get("metric") or ""
+        distance_km = round(distance_value / 1000)
+
+        duration_text = summary.get("duration", {}).get("text") or ""
+
+        # Prefer FasTag (tag) cost; fall back to tagAndCash, then cash, then 0
+        toll_cost = float(
+            costs.get("tag")
+            or costs.get("tagAndCash")
+            or costs.get("cash")
+            or 0.0
+        )
+        estimated_fuel = float(costs.get("fuel") or 0.0)
+
+        polyline = route.get("polyline") or ""
+
+        options.append(
+            RouteSelectionOption(
+                route_name=route_name,
+                labels=labels,
+                distance_km=distance_km,
+                distance_text=distance_text,
+                duration_text=duration_text,
+                toll_cost=toll_cost,
+                estimated_fuel=estimated_fuel,
+                polyline=polyline,
+            )
+        )
+
+    return options
+
+
+@router.post("/trips/confirm", response_model=TripResponse, status_code=status.HTTP_201_CREATED)
+async def confirm_trip_route(
+    confirm_in: TripConfirmPayload,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Step 2 of 2 — Route Confirmation.
+
+    Creates a Trip row in DRAFT status seeded with the dispatcher's chosen
+    route parameters (planned_dist and toll_cost from the selected route card).
+
+    Assets (vehicle/driver) are NOT locked here. Use PUT /trips/{id}/dispatch
+    to lock assets and transition the trip to Dispatched.
+    """
+    # --- Ensure trip_code is unique ---
+    existing = await db.exec(select(Trip).where(Trip.trip_code == confirm_in.trip_code))
+    if existing.first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Trip with code '{confirm_in.trip_code}' already exists.",
+        )
+
+    # --- Create the Draft trip ---
+    db_trip = Trip(
+        trip_code=confirm_in.trip_code,
+        source=confirm_in.source,
+        destination=confirm_in.destination,
+        vehicle_id=confirm_in.vehicle_id,
+        driver_id=confirm_in.driver_id,
+        cargo_weight=confirm_in.cargo_weight,
+        planned_dist=confirm_in.planned_dist,
+        toll_cost=confirm_in.toll_cost,
+        status=TripStatus.DRAFT,
+    )
+    db.add(db_trip)
+    await db.commit()
+    await db.refresh(db_trip)
+    return db_trip
+
+
 
 @router.get("/trips", response_model=List[TripDetailResponse])
 async def list_trips(db: AsyncSession = Depends(get_db)):
@@ -145,10 +294,10 @@ async def dispatch_trip(trip_id: int, db: AsyncSession = Depends(get_db)):
     driver.status = "On Trip"
     trip.status = "Dispatched"
     
-    # Programmatic Toll Calculation Helper Integration
-    # Toll Formula: Distance * Base Rate (e.g., 2.0) * Type Multiplier
-    multiplier = 2.5 if vehicle.type.lower() == "truck" else (1.5 if vehicle.type.lower() == "mini" else 1.0)
-    trip.toll_cost = trip.planned_distance * 2.0 * multiplier
+    # Programmatic Toll Calculation Helper Integration (Only if not already calculated by TollGuru)
+    if not trip.toll_cost or trip.toll_cost == 0.0:
+        multiplier = 2.5 if vehicle.type.lower() == "truck" else (1.5 if vehicle.type.lower() == "mini" else 1.0)
+        trip.toll_cost = trip.planned_distance * 2.0 * multiplier
 
     await db.commit()
     await db.refresh(trip)

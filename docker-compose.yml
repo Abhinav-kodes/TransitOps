@@ -48,6 +48,7 @@ services:
       - MINIO_SECURE=false
       - MINIO_BUCKET=transitops-documents
       - MINIO_EXTERNAL_URL=http://localhost:9000
+      - TOLLGURU_API_KEY=tg_4FE916BF3F704B51822BEE22A26A62BA
     depends_on:
       db:
         condition: service_healthy

@@ -9,6 +9,7 @@ import VehicleRegistryPage from "./pages/VehicleRegistryPage"
 import DriverRegistryPage from "./pages/DriverRegistryPage"
 import FuelExpensesPage from "./pages/FuelExpensesPage"
 import MaintenancePage from "./pages/MaintenancePage"
+import TripsPage from "./pages/TripsPage"
 import ComingSoonPage from "./pages/ComingSoonPage"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -44,7 +45,7 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="fleet/vehicles" element={<VehicleRegistryPage />} />
             <Route path="drivers" element={<DriverRegistryPage />} />
-            <Route path="trips" element={<ComingSoonPage titleKey="sidebar.trips" />} />
+            <Route path="trips" element={<TripsPage />} />
             <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="fuel-expenses" element={<FuelExpensesPage />} />
             <Route path="analytics" element={<ComingSoonPage titleKey="sidebar.analytics" />} />

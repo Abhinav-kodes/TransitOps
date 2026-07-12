@@ -12,7 +12,7 @@ const NAV = [
   { labelKey: "sidebar.drivers", icon: <Users className="size-4" />, children: [
     { labelKey: "sidebar.allDrivers", path: "/drivers" },
   ]},
-  { labelKey: "sidebar.trips", icon: <Map className="size-4" />, comingSoon: true, path: "/trips" },
+  { labelKey: "sidebar.trips", icon: <Map className="size-4" />, path: "/trips" },
   { labelKey: "sidebar.maintenance", icon: <Wrench className="size-4" />, children: [
     { labelKey: "sidebar.serviceLog", path: "/maintenance" },
   ]},
