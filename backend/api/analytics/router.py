@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlmodel import select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from api.dependencies import get_db
+from api.dependencies import get_db, require_roles
 from packages.db.models.fleet import Vehicle, Driver, VehicleStatus, DriverStatus
 from packages.db.models.ops import Trip
 from packages.db.models.finance import FuelLog
@@ -10,7 +10,9 @@ from api.analytics.schemas import DashboardAnalyticsResponse, DailyUtilization, 
 
 router = APIRouter()
 
-@router.get("/dashboard", response_model=DashboardAnalyticsResponse)
+ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"]
+
+@router.get("/dashboard", response_model=DashboardAnalyticsResponse, dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
 async def get_dashboard_analytics(db: AsyncSession = Depends(get_db)):
     """Computes all fleet operational KPIs and status distributions in real-time."""
     

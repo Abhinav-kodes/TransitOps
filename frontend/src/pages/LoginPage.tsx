@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { CheckCircle2, Globe, AlertCircle } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import i18n from "@/lib/i18n"
+import { useAuth } from "@/lib/auth"
 import loginBadges from "@/assets/login_badges.webp"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
@@ -23,6 +24,11 @@ interface LoginFormState {
   role: string
 }
 
+interface RoleOption {
+  id: number
+  name: string
+}
+
 const FEATURES = [
   "Reduce collisions and downtime with automated event detection and AI-driven telemetry.",
   "Get unmatched visibility into your fleet, track active dispatches, and optimize routing in real time.",
@@ -30,23 +36,25 @@ const FEATURES = [
   "Lower operational costs, analyze fuel consumption, and prevent unauthorized usage with granular RBAC.",
 ]
 
-const ROLES = ["fleetManager", "dispatcher", "safetyOfficer", "financialAnalyst"] as const
-
-const ROLE_MAP: Record<string, number> = {
-  fleetManager: 1,
-  dispatcher: 2,
-  safetyOfficer: 3,
-  financialAnalyst: 4,
-}
+const PUBLIC_ROLES = ["Fleet Manager", "Dispatcher", "Safety Officer", "Financial Analyst"]
 
 export default function LoginPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [form, setForm] = useState<LoginFormState>({ email: "", password: "", role: "dispatcher" })
+  const { login: authLogin } = useAuth()
+  const [form, setForm] = useState<LoginFormState>({ email: "", password: "", role: "Dispatcher" })
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [roles, setRoles] = useState<RoleOption[]>([])
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/auth/roles`)
+      .then((r) => r.json())
+      .then((data: RoleOption[]) => setRoles(data))
+      .catch(() => {})
+  }, [])
 
   const handleLogin = async (emailToLogin: string, passwordToLogin: string) => {
     const params = new URLSearchParams()
@@ -67,7 +75,7 @@ export default function LoginPage() {
     }
 
     const data = await res.json()
-    localStorage.setItem("transitops-token", data.access_token)
+    await authLogin(data.access_token)
     navigate("/dashboard")
   }
 
@@ -85,8 +93,8 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        // Register flow
-        const targetRoleId = ROLE_MAP[form.role] || 2
+        const targetRole = roles.find((r) => r.name === form.role)
+        const targetRoleId = targetRole?.id || 2
         const res = await fetch(`${API_URL}/api/auth/register`, {
           method: "POST",
           headers: {
@@ -105,11 +113,8 @@ export default function LoginPage() {
         }
 
         setSuccess("Account successfully created! Logging in...")
-        
-        // Auto-login after registration
         await handleLogin(form.email, form.password)
       } else {
-        // Login flow
         await handleLogin(form.email, form.password)
       }
     } catch (err: any) {
@@ -237,7 +242,7 @@ export default function LoginPage() {
                 {t("login.role")}
               </Label>
               <Select.Root
-                defaultValue="dispatcher"
+                defaultValue="Dispatcher"
                 onValueChange={(val: string | null) => val && setForm({ ...form, role: val })}
                 disabled={loading}
               >
@@ -245,11 +250,13 @@ export default function LoginPage() {
                   <SelectValue placeholder={t("login.selectRole")} />
                 </SelectTrigger>
                 <SelectContent className="border-zinc-200 bg-white">
-                  {ROLES.map((role) => (
-                    <SelectItem key={role} value={role} className="text-sm text-zinc-700">
-                      {t(`login.${role}`)}
-                    </SelectItem>
-                  ))}
+                  {roles
+                    .filter((r) => PUBLIC_ROLES.includes(r.name))
+                    .map((r) => (
+                      <SelectItem key={r.id} value={r.name} className="text-sm text-zinc-700">
+                        {r.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select.Root>
 

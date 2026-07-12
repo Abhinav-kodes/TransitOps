@@ -6,7 +6,7 @@ from typing import List
 
 import httpx
 
-from api.dependencies import get_db
+from api.dependencies import get_db, require_roles
 from packages.db.models.fleet import Vehicle, Driver
 from packages.db.models.ops import Trip, MaintenanceLog, TripStatus
 from packages.utils.tollguru_client import fetch_routes, resolve_vehicle_type
@@ -18,11 +18,17 @@ from api.operations.schemas import (
 
 router = APIRouter()
 
+# Role constants
+DISPATCHER_ONLY = ["Dispatcher"]
+DISPATCHER_AND_DRIVER = ["Dispatcher", "Driver"]
+FLEET_MANAGER_ONLY = ["Fleet Manager"]
+ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"]
+
 # =====================================================================
 # ROUTE PLANNING — TOLLGURU INTEGRATION
 # =====================================================================
 
-@router.post("/trips/plan", response_model=List[RouteSelectionOption])
+@router.post("/trips/plan", response_model=List[RouteSelectionOption], dependencies=[Depends(require_roles(DISPATCHER_AND_DRIVER))])
 async def plan_trip_routes(
     plan_in: TripPlanRequest,
     db: AsyncSession = Depends(get_db),
@@ -122,7 +128,7 @@ async def plan_trip_routes(
     return options
 
 
-@router.post("/trips/confirm", response_model=TripResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/trips/confirm", response_model=TripResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles(DISPATCHER_AND_DRIVER))])
 async def confirm_trip_route(
     confirm_in: TripConfirmPayload,
     db: AsyncSession = Depends(get_db),
@@ -163,7 +169,7 @@ async def confirm_trip_route(
 
 
 
-@router.get("/trips", response_model=List[TripDetailResponse])
+@router.get("/trips", response_model=List[TripDetailResponse], dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
 async def list_trips(db: AsyncSession = Depends(get_db)):
     """Lists all trips in the system with vehicle and driver details."""
     res = await db.exec(select(Trip))
@@ -205,7 +211,7 @@ async def list_trips(db: AsyncSession = Depends(get_db)):
 # MAINTENANCE WORKFLOWS
 # =====================================================================
 
-@router.post("/maintenance", response_model=MaintenanceResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/maintenance", response_model=MaintenanceResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles(FLEET_MANAGER_ONLY))])
 async def create_maintenance_record(log_in: MaintenanceCreate, db: AsyncSession = Depends(get_db)):
     """Creates a maintenance log and automatically sets the vehicle to 'In Shop' status."""
     vehicle = await db.get(Vehicle, log_in.vehicle_id)
@@ -225,7 +231,7 @@ async def create_maintenance_record(log_in: MaintenanceCreate, db: AsyncSession 
     await db.refresh(db_log)
     return db_log
 
-@router.put("/maintenance/{log_id}/complete", response_model=MaintenanceResponse)
+@router.put("/maintenance/{log_id}/complete", response_model=MaintenanceResponse, dependencies=[Depends(require_roles(FLEET_MANAGER_ONLY))])
 async def complete_maintenance(log_id: int, db: AsyncSession = Depends(get_db)):
     """Closes a maintenance record, restoring the vehicle status back to 'Available'."""
     log = await db.get(MaintenanceLog, log_id)
@@ -245,7 +251,7 @@ async def complete_maintenance(log_id: int, db: AsyncSession = Depends(get_db)):
 # TRIP DISPATCHER STATE MACHINE
 # =====================================================================
 
-@router.post("/trips", response_model=TripResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/trips", response_model=TripResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles(DISPATCHER_ONLY))])
 async def create_trip_draft(trip_in: TripCreate, db: AsyncSession = Depends(get_db)):
     """Creates a new trip draft layout blueprint."""
     trip_data = trip_in.model_dump()
@@ -256,7 +262,7 @@ async def create_trip_draft(trip_in: TripCreate, db: AsyncSession = Depends(get_
     await db.refresh(db_trip)
     return db_trip
 
-@router.put("/trips/{trip_id}/dispatch", response_model=TripResponse)
+@router.put("/trips/{trip_id}/dispatch", response_model=TripResponse, dependencies=[Depends(require_roles(DISPATCHER_ONLY))])
 async def dispatch_trip(trip_id: int, db: AsyncSession = Depends(get_db)):
     """Validates core capacity, compliance, and availability constraints before dispatching."""
     trip = await db.get(Trip, trip_id)
@@ -303,7 +309,7 @@ async def dispatch_trip(trip_id: int, db: AsyncSession = Depends(get_db)):
     await db.refresh(trip)
     return trip
 
-@router.put("/trips/{trip_id}/complete", response_model=TripResponse)
+@router.put("/trips/{trip_id}/complete", response_model=TripResponse, dependencies=[Depends(require_roles(DISPATCHER_AND_DRIVER))])
 async def complete_trip(trip_id: int, payload: TripCompletePayload, db: AsyncSession = Depends(get_db)):
     """Completes trip execution, updates the asset metrics, and returns both to 'Available'."""
     trip = await db.get(Trip, trip_id)
@@ -328,7 +334,7 @@ async def complete_trip(trip_id: int, payload: TripCompletePayload, db: AsyncSes
     await db.refresh(trip)
     return trip
 
-@router.put("/trips/{trip_id}/cancel", response_model=TripResponse)
+@router.put("/trips/{trip_id}/cancel", response_model=TripResponse, dependencies=[Depends(require_roles(DISPATCHER_ONLY))])
 async def cancel_trip(trip_id: int, db: AsyncSession = Depends(get_db)):
     """Cancels an active or draft trip execution plan, freeing up locked infrastructure assets."""
     trip = await db.get(Trip, trip_id)

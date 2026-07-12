@@ -4,13 +4,15 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Literal
 
-from api.dependencies import get_db
+from api.dependencies import get_db, require_roles
 from packages.db.models.fleet import Vehicle, Driver
 from packages.db.models.ops import MaintenanceLog
 from packages.db.models.finance import FuelLog, Expense
 from packages.utils.storage import upload_file, get_file_data, delete_file
 
 router = APIRouter()
+
+ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"]
 
 # Maps entity_type to (ORM model, image field name, folder in MinIO)
 ENTITY_MAP = {
@@ -24,7 +26,7 @@ ENTITY_MAP = {
 EntityType = Literal["vehicle", "driver", "fuel_log", "expense", "maintenance_log"]
 
 
-@router.post("/upload", status_code=status.HTTP_201_CREATED)
+@router.post("/upload", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
 async def upload_document(
     file: UploadFile = File(...),
     entity_type: EntityType = Form(...),
@@ -68,7 +70,7 @@ async def upload_document(
     return {"url": object_key, "message": f"Document uploaded for {entity_type} {entity_id}."}
 
 
-@router.get("/file/{object_key:path}")
+@router.get("/file/{object_key:path}", dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
 async def download_document(object_key: str):
     """Reads the file from MinIO and streams it to the browser."""
     try:
@@ -82,7 +84,7 @@ async def download_document(object_key: str):
     )
 
 
-@router.delete("/{object_key:path}")
+@router.delete("/{object_key:path}", dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
 async def remove_document(
     object_key: str,
     entity_type: EntityType = Form(...),

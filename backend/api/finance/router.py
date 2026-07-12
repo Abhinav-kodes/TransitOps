@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from api.dependencies import get_db
+from api.dependencies import get_db, require_roles
 from packages.db.models.fleet import Vehicle, Driver
 from packages.db.models.ops import Trip, MaintenanceLog
 from packages.db.models.finance import FuelLog, Expense
@@ -14,12 +14,16 @@ from api.finance.schemas import (
 
 router = APIRouter()
 
+# Role constants
+FINANCIAL_ANALYST_ONLY = ["Financial Analyst"]
+ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"]
+
 # =====================================================================
 # FUEL & EXPENSE REGISTER
 # =====================================================================
 
-@router.post("/fuel-logs", response_model=FuelLogResponse, status_code=status.HTTP_201_CREATED)
-@router.post("/fuel", response_model=FuelLogResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/fuel-logs", response_model=FuelLogResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles(FINANCIAL_ANALYST_ONLY))])
+@router.post("/fuel", response_model=FuelLogResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles(FINANCIAL_ANALYST_ONLY))])
 async def create_fuel_log(log_in: FuelLogCreate, db: AsyncSession = Depends(get_db)):
     """Creates a fuel log record associated with a vehicle (supports both /fuel and /fuel-logs)."""
     vehicle = await db.get(Vehicle, log_in.vehicle_id)
@@ -32,7 +36,7 @@ async def create_fuel_log(log_in: FuelLogCreate, db: AsyncSession = Depends(get_
     await db.refresh(db_log)
     return db_log
 
-@router.post("/expenses", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/expenses", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles(FINANCIAL_ANALYST_ONLY))])
 async def create_expense(expense_in: ExpenseCreate, db: AsyncSession = Depends(get_db)):
     """Logs an expense record (tolls, maintenance, or other costs) for a vehicle."""
     vehicle = await db.get(Vehicle, expense_in.vehicle_id)
@@ -58,7 +62,7 @@ async def create_expense(expense_in: ExpenseCreate, db: AsyncSession = Depends(g
 # RETURN ON INVESTMENT (ROI) CALCULATOR
 # =====================================================================
 
-@router.get("/roi/{vehicle_id}", response_model=RoiResponse)
+@router.get("/roi/{vehicle_id}", response_model=RoiResponse, dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
 async def calculate_vehicle_roi(vehicle_id: int, db: AsyncSession = Depends(get_db)):
     """Computes dynamic return on investment (ROI) metric for a target vehicle asset."""
     vehicle = await db.get(Vehicle, vehicle_id)
@@ -109,7 +113,7 @@ async def calculate_vehicle_roi(vehicle_id: int, db: AsyncSession = Depends(get_
 # UNIFIED ANALYTICS COMPILER
 # =====================================================================
 
-@router.get("/dashboard/analytics", response_model=DashboardKPIs)
+@router.get("/dashboard/analytics", response_model=DashboardKPIs, dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
 async def compile_dashboard_metrics(db: AsyncSession = Depends(get_db)):
     """Gathers and compiles all system operations statistics for backend views."""
     # 1. Gather baseline asset and operations operational status balances

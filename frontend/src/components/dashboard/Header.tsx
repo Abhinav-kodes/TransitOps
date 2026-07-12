@@ -1,18 +1,8 @@
-import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router-dom"
 import { Moon, Sun, Globe, Bell, LogOut, Search } from "lucide-react"
 import { useTheme } from "@/lib/theme"
+import { useAuth } from "@/lib/auth"
 import i18n from "@/lib/i18n"
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
-
-interface User {
-  id: number
-  email: string
-  role_id: number
-  role_name: string
-}
 
 function getInitials(email: string): string {
   const name = email.split("@")[0]
@@ -32,23 +22,7 @@ function getDisplayName(email: string): string {
 export default function Header() {
   useTranslation()
   const { theme, toggleTheme } = useTheme()
-  const navigate = useNavigate()
-  const [user, setUser] = useState<User | null>(null)
-
-  useEffect(() => {
-    const token = localStorage.getItem("transitops-token")
-    if (!token || token === "skip-mode") return
-
-    fetch(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed")
-        return res.json()
-      })
-      .then((data: User) => setUser(data))
-      .catch(() => {})
-  }, [])
+  const { user, logout } = useAuth()
 
   const cycleLang = () => {
     const langs = ["en", "hi"]
@@ -57,15 +31,10 @@ export default function Header() {
     localStorage.setItem("transitops-lang", next)
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("transitops-token")
-    navigate("/login")
-  }
-
   const langLabel = i18n.language === "hi" ? "HI" : "EN"
   const displayName = user ? getDisplayName(user.email) : "Guest"
   const initials = user ? getInitials(user.email) : "G"
-  const roleName = user?.role_name || "User"
+  const roleName = user?.role || "User"
 
   return (
     <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-zinc-200 bg-white/80 px-6 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
@@ -106,7 +75,7 @@ export default function Header() {
           </div>
         </div>
         <button
-          onClick={handleLogout}
+          onClick={logout}
           title="Sign out"
           className="rounded p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-red-600 dark:hover:bg-zinc-800 dark:hover:text-red-400"
         >

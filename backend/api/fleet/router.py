@@ -3,8 +3,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import List, Optional
 
-from api.dependencies import get_db
-# Importing the existing database models from your decoupled package setup
+from api.dependencies import get_db, require_roles
 from packages.db.models.fleet import Vehicle, Driver 
 from api.fleet.schemas import (
     VehicleCreate, VehicleResponse, VehicleUpdate,
@@ -13,11 +12,16 @@ from api.fleet.schemas import (
 
 router = APIRouter()
 
+# Role constants
+ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"]
+FLEET_AND_SAFETY = ["Fleet Manager", "Safety Officer"]
+FLEET_ONLY = ["Fleet Manager"]
+
 # =====================================================================
 # VEHICLES REGISTRY ENDPOINTS
 # =====================================================================
 
-@router.post("/vehicles", response_model=VehicleResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/vehicles", response_model=VehicleResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles(FLEET_ONLY))])
 async def create_vehicle(vehicle_in: VehicleCreate, db: AsyncSession = Depends(get_db)):
     """Registers a fresh fleet vehicle. Validates unique registration parameters."""
     stmt = select(Vehicle).where(Vehicle.reg_no == vehicle_in.reg_no)
@@ -35,7 +39,7 @@ async def create_vehicle(vehicle_in: VehicleCreate, db: AsyncSession = Depends(g
     await db.refresh(db_vehicle)
     return db_vehicle
 
-@router.get("/vehicles", response_model=List[VehicleResponse])
+@router.get("/vehicles", response_model=List[VehicleResponse], dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
 async def list_vehicles(
     status_filter: Optional[str] = Query(None, alias="status"),
     type_filter: Optional[str] = Query(None, alias="type"),
@@ -54,7 +58,7 @@ async def list_vehicles(
     result = await db.exec(stmt)
     return result.all()
 
-@router.put("/vehicles/{vehicle_id}", response_model=VehicleResponse)
+@router.put("/vehicles/{vehicle_id}", response_model=VehicleResponse, dependencies=[Depends(require_roles(FLEET_ONLY))])
 async def update_vehicle(vehicle_id: int, vehicle_in: VehicleUpdate, db: AsyncSession = Depends(get_db)):
     """Updates internal metrics, lifecycle statuses, or manual odometer readings."""
     db_vehicle = await db.get(Vehicle, vehicle_id)
@@ -73,7 +77,7 @@ async def update_vehicle(vehicle_id: int, vehicle_in: VehicleUpdate, db: AsyncSe
 # DRIVER REGISTRY ENDPOINTS
 # =====================================================================
 
-@router.post("/drivers", response_model=DriverResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/drivers", response_model=DriverResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles(FLEET_AND_SAFETY))])
 async def create_driver(driver_in: DriverCreate, db: AsyncSession = Depends(get_db)):
     """Creates an active driver resource registry context profile."""
     stmt = select(Driver).where(Driver.license_no == driver_in.license_no)
@@ -90,7 +94,7 @@ async def create_driver(driver_in: DriverCreate, db: AsyncSession = Depends(get_
     await db.refresh(db_driver)
     return db_driver
 
-@router.get("/drivers", response_model=List[DriverResponse])
+@router.get("/drivers", response_model=List[DriverResponse], dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
 async def list_drivers(
     status_filter: Optional[str] = Query(None, alias="status"),
     db: AsyncSession = Depends(get_db)
@@ -103,7 +107,7 @@ async def list_drivers(
     result = await db.exec(stmt)
     return result.all()
 
-@router.put("/drivers/{driver_id}", response_model=DriverResponse)
+@router.put("/drivers/{driver_id}", response_model=DriverResponse, dependencies=[Depends(require_roles(FLEET_AND_SAFETY))])
 async def update_driver(driver_id: int, driver_in: DriverUpdate, db: AsyncSession = Depends(get_db)):
     """Modifies operator status fields (e.g., handling suspensions or off-duty toggles)."""
     db_driver = await db.get(Driver, driver_id)

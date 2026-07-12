@@ -6,6 +6,8 @@ class RoleName(str, Enum):
     FLEET_MANAGER = "Fleet Manager"
     DISPATCHER = "Dispatcher"
     DRIVER = "Driver"
+    SAFETY_OFFICER = "Safety Officer"
+    FINANCIAL_ANALYST = "Financial Analyst"
     ADMIN = "Admin"
 
 class Role(SQLModel, table=True):

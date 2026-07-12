@@ -3,9 +3,10 @@ from fastapi.security import OAuth2PasswordBearer
 import jwt
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from typing import List
 
 from packages.db import get_session
-from packages.db.models.auth import User
+from packages.db.models.auth import User, Role
 from api.authentication.security import SECRET_KEY, ALGORITHM
 
 # Declares the login URL path that OAuth2 will use to retrieve tokens
@@ -36,3 +37,33 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
     return user
+
+
+async def get_current_user_with_role(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+) -> User:
+    """Extends get_current_user by also loading and attaching the role object."""
+    result = await db.exec(select(Role).where(Role.id == current_user.role_id))
+    role = result.first()
+    if role:
+        current_user.role = role
+    return current_user
+
+
+def require_roles(allowed_roles: List[str]):
+    """
+    Factory dependency that enforces role-based access control.
+    
+    Usage:
+        @router.get("/fleet/vehicles", dependencies=[Depends(require_roles(["Fleet Manager", "Dispatcher"]))])
+    """
+    async def _check_role(current_user: User = Depends(get_current_user_with_role)):
+        role_name = getattr(current_user.role, "name", None)
+        if role_name is None or role_name.value not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. Required role: {', '.join(allowed_roles)}",
+            )
+        return current_user
+    return _check_role
