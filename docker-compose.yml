@@ -16,6 +16,19 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    image: minio/minio:latest
+    container_name: transitops-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
   backend:
     build:
       context: ./backend
@@ -29,9 +42,16 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://transitops_admin:internal_secure_pass@db:5432/transitops_prod
       - SECRET_KEY=9a2f7c320d3f848529b4e5414d6438a9d18e225bb1536b9e28f3bb2511470e9a
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_SECURE=false
+      - MINIO_BUCKET=transitops-documents
     depends_on:
       db:
         condition: service_healthy
+      minio:
+        condition: service_started
 
   frontend:
     build:
@@ -51,3 +71,4 @@ services:
 
 volumes:
   postgres_data:
+  minio_data:
