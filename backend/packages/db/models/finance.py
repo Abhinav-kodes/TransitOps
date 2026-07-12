@@ -16,6 +16,7 @@ class FuelLog(SQLModel, table=True):
     date: datetime.date = Field(nullable=False)
     liters: Decimal = Field(sa_column=SaColumn(Numeric(6, 2), nullable=False))
     fuel_cost: Decimal = Field(sa_column=SaColumn(Numeric(10, 2), nullable=False))
+    fuel_bill_url: Optional[str] = Field(default=None, nullable=True)
 
     # Relationships
     vehicle: "Vehicle" = Relationship(back_populates="fuel_logs")
@@ -36,6 +37,7 @@ class Expense(SQLModel, table=True):
     toll: Decimal = Field(default=Decimal("0.00"), sa_column=SaColumn(Numeric(8, 2), nullable=False))
     other: Decimal = Field(default=Decimal("0.00"), sa_column=SaColumn(Numeric(8, 2), nullable=False))
     total_cost: Decimal = Field(sa_column=SaColumn(Numeric(12, 2), nullable=False))
+    expense_bill_url: Optional[str] = Field(default=None, nullable=True)
 
     # Relationships
     trip: Optional["Trip"] = Relationship(back_populates="expenses")

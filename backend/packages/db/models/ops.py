@@ -53,6 +53,7 @@ class MaintenanceLog(SQLModel, table=True):
     cost: Decimal = Field(sa_column=SaColumn(Numeric(10, 2), nullable=False))
     entry_date: date = Field(nullable=False)
     status: MaintenanceStatus = Field(default=MaintenanceStatus.ACTIVE, nullable=False)
+    maintenance_bill_url: Optional[str] = Field(default=None, nullable=True)
 
     # Relationships
     vehicle: "Vehicle" = Relationship(back_populates="maintenance_logs")

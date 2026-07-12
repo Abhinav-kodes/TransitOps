@@ -16,6 +16,7 @@ class MaintenanceResponse(BaseModel):
     cost: float
     entry_date: date
     status: Literal["Active", "Completed"]
+    maintenance_bill_url: Optional[str] = None
 
     class Config:
         from_attributes = True

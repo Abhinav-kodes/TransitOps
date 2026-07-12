@@ -26,6 +26,7 @@ class VehicleUpdate(BaseModel):
 class VehicleResponse(VehicleBase):
     id: int
     status: VehicleStatus
+    document_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -54,6 +55,7 @@ class DriverUpdate(BaseModel):
 class DriverResponse(DriverBase):
     id: int
     status: DriverStatus
+    license_url: Optional[str] = None
 
     class Config:
         from_attributes = True

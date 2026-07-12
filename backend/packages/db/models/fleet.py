@@ -33,6 +33,7 @@ class Vehicle(SQLModel, table=True):
     odometer: int = Field(default=0, nullable=False)
     acq_cost: Decimal = Field(sa_column=SaColumn(Numeric(12, 2), nullable=False))
     status: VehicleStatus = Field(default=VehicleStatus.AVAILABLE, nullable=False)
+    document_url: Optional[str] = Field(default=None, nullable=True)
 
     # Relationships
     trips: List["Trip"] = Relationship(back_populates="vehicle")
@@ -54,6 +55,7 @@ class Driver(SQLModel, table=True):
     contact_no: str = Field(max_length=20, nullable=False)
     safety_score: int = Field(default=100, nullable=False)
     status: DriverStatus = Field(default=DriverStatus.AVAILABLE, nullable=False)
+    license_url: Optional[str] = Field(default=None, nullable=True)
 
     # Relationships
     trips: List["Trip"] = Relationship(back_populates="driver")
