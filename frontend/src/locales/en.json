@@ -109,5 +109,23 @@
   "comingSoon": {
     "title": "Coming Soon",
     "description": "This feature is currently under development and will be available soon."
+  },
+  "fuelExpensesPage": {
+    "title": "Fuel & Expenses",
+    "subtitle": "Track fuel consumption, maintenance costs, and other operational expenses.",
+    "fuelLogs": "FUEL LOGS",
+    "logFuel": "Log Fuel",
+    "addExpense": "Add Expense",
+    "vehicle": "VEHICLE",
+    "date": "DATE",
+    "liters": "LITERS",
+    "fuelCost": "FUEL COST",
+    "otherExpenses": "OTHER EXPENSES (TOLL / MISC)",
+    "trip": "TRIP",
+    "toll": "TOLL",
+    "other": "OTHER",
+    "maintLinked": "MAINT. (LINKED)",
+    "total": "TOTAL",
+    "totalOperationalCost": "TOTAL OPERATIONAL COST (AUTO) = FUEL + MAINT"
   }
 }
