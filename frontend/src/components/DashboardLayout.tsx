@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom"
 import Sidebar from "./dashboard/Sidebar"
 import Header from "./dashboard/Header"
+import AskTransitOps from "./dashboard/AskTransitOps"
 
 export default function DashboardLayout() {
   return (
@@ -12,6 +13,7 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      <AskTransitOps />
     </div>
   )
 }

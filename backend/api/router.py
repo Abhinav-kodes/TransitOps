@@ -5,6 +5,7 @@ from api.operations.router import router as ops_router
 from api.finance.router import router as finance_router
 from api.analytics.router import router as analytics_router
 from api.documents.router import router as documents_router
+from api.chat.router import router as chat_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
@@ -13,3 +14,4 @@ api_router.include_router(ops_router, prefix="/operations", tags=["Trip & Worksh
 api_router.include_router(finance_router, prefix="/finance", tags=["Financials"])
 api_router.include_router(analytics_router, prefix="/analytics", tags=["Dashboard Analytics"])
 api_router.include_router(documents_router, prefix="/documents", tags=["Document Uploads"])
+api_router.include_router(chat_router, prefix="/chat", tags=["Ask TransitOps"])

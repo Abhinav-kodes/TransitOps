@@ -52,6 +52,7 @@ services:
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
       - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
       - NOTIFICATION_EMAIL=${NOTIFICATION_EMAIL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:
       db:
         condition: service_healthy
