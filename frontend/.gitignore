@@ -22,4 +22,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-frontend/.pnpm-store/
+.pnpm-store/

@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import i18n from "@/lib/i18n"
+import loginBadges from "@/assets/login_badges.webp"
 
 interface LoginFormState {
   email: string
@@ -52,7 +53,7 @@ export default function LoginPage() {
         <div className="mx-auto max-w-lg px-12 py-16">
           <div className="mb-8 inline-block">
             <img
-              src="/assets/login_badges.webp"
+              src={loginBadges}
               alt="Enterprise Leader Badge"
               className="h-20 w-auto rounded-xl object-contain"
             />
