@@ -15,6 +15,7 @@ import {
 import i18n from "@/lib/i18n"
 import { useAuth } from "@/lib/auth"
 import loginBadges from "@/assets/login_badges.webp"
+import geminiLogo from "@/assets/Gemini_Generated_Image_met9fmmet9fmmet9.png"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
@@ -172,9 +173,12 @@ export default function LoginPage() {
 
       <div className="flex w-full flex-col bg-white lg:w-1/2">
         <div className="flex items-center justify-between px-12 py-5 lg:px-20">
-          <span className="text-2xl font-black tracking-tighter text-black">
-            {t("app")}
-          </span>
+          <div className="flex items-center gap-2.5">
+            <img src={geminiLogo} alt="TransitOps" className="h-8 w-8 rounded-lg object-contain" />
+            <span className="text-2xl font-black tracking-tighter text-black">
+              {t("app")}
+            </span>
+          </div>
           <button
             onClick={cycleLang}
             className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-800"

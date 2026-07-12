@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Truck, Users, Map, Wrench, Fuel, BarChart3, Settings
 } from "lucide-react"
 import { useAuth } from "@/lib/auth"
+import geminiLogo from "@/assets/Gemini_Generated_Image_met9fmmet9fmmet9.png"
 
 const NAV = [
   { labelKey: "sidebar.dashboard", icon: <LayoutDashboard className="size-4" />, path: "/dashboard", roles: ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"] },
@@ -38,9 +39,12 @@ export default function Sidebar() {
   return (
     <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
       <div className="border-b border-zinc-200 px-5 py-5 dark:border-zinc-800">
-        <span className="text-base font-bold tracking-tight text-zinc-900 dark:text-white">
-          {t("app")}
-        </span>
+        <div className="flex items-center gap-2.5">
+          <img src={geminiLogo} alt="TransitOps" className="h-7 w-7 rounded-lg object-contain" />
+          <span className="text-base font-bold tracking-tight text-zinc-900 dark:text-white">
+            {t("app")}
+          </span>
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
