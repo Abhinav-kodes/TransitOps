@@ -1,47 +1,54 @@
+import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { Moon, Sun, Globe, Bell, LogOut, Search } from "lucide-react"
 import { useTheme } from "@/lib/theme"
 import i18n from "@/lib/i18n"
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
+
+interface User {
+  id: number
+  email: string
+  role_id: number
+  role_name: string
+}
+
+function getInitials(email: string): string {
+  const name = email.split("@")[0]
+  const parts = name.split(/[._-]/)
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase()
+  }
+  return name.substring(0, 2).toUpperCase()
+}
+
+function getDisplayName(email: string): string {
+  const name = email.split("@")[0]
+  const parts = name.split(/[._-]/)
+  return parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ")
+}
+
 export default function Header() {
   useTranslation()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
+  const [user, setUser] = useState<User | null>(null)
 
-  const token = localStorage.getItem("transitops-token")
-  let email = "Guest"
-  let role = "Dispatcher"
-  if (token && token !== "skip-mode") {
-    try {
-      const payloadBase64 = token.split(".")[1]
-      const decodedPayload = JSON.parse(atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/")))
-      email = decodedPayload.sub || "Guest"
-      role = decodedPayload.role || "Dispatcher"
-    } catch (e) {
-      console.error("Failed to decode token", e)
-    }
-  }
+  useEffect(() => {
+    const token = localStorage.getItem("transitops-token")
+    if (!token || token === "skip-mode") return
 
-  // Format display name and initials
-  let name = "Guest User"
-  let initials = "GU"
-  if (email !== "Guest") {
-    const namePart = email.split("@")[0]
-    name = namePart
-      .split(/[\._-]/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ")
-    initials = name
-      .split(" ")
-      .map((word) => word.charAt(0))
-      .join("")
-      .slice(0, 2)
-      .toUpperCase()
-  } else if (token === "skip-mode") {
-    name = "Demo User"
-    initials = "DU"
-  }
+    fetch(`${API_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed")
+        return res.json()
+      })
+      .then((data: User) => setUser(data))
+      .catch(() => {})
+  }, [])
 
   const cycleLang = () => {
     const langs = ["en", "hi"]
@@ -56,6 +63,9 @@ export default function Header() {
   }
 
   const langLabel = i18n.language === "hi" ? "HI" : "EN"
+  const displayName = user ? getDisplayName(user.email) : "Guest"
+  const initials = user ? getInitials(user.email) : "G"
+  const roleName = user?.role_name || "User"
 
   return (
     <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-zinc-200 bg-white/80 px-6 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
@@ -87,9 +97,9 @@ export default function Header() {
         </button>
 
         <div className="ml-2 flex items-center gap-2.5 border-l border-zinc-200 pl-3 dark:border-zinc-800">
-          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{name}</span>
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{displayName}</span>
           <span className="rounded-full bg-[#0080FF]/10 px-2.5 py-0.5 text-[10px] font-semibold text-[#0080FF]">
-            {role}
+            {roleName}
           </span>
           <div className="flex size-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
             {initials}

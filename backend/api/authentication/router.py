@@ -101,6 +101,18 @@ async def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
+async def get_current_active_user(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
     """The UI layout anchor. Returns active user data to mount front-end visibility layouts."""
-    return current_user
+    result_role = await db.exec(select(Role).where(Role.id == current_user.role_id))
+    role = result_role.first()
+    role_name = role.name if role else "Guest"
+
+    return UserResponse(
+        id=current_user.id,
+        email=current_user.email,
+        role_id=current_user.role_id,
+        role_name=role_name,
+    )
