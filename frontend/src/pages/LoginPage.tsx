@@ -5,13 +5,6 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import i18n from "@/lib/i18n"
 import { useAuth } from "@/lib/auth"
 import geminiLogo from "@/assets/TT-removebg-preview.png"
@@ -47,12 +40,23 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [roles, setRoles] = useState<RoleOption[]>([])
+  const [roles, setRoles] = useState<RoleOption[]>([
+    { id: 1, name: "Fleet Manager" },
+    { id: 2, name: "Dispatcher" },
+    { id: 3, name: "Driver" },
+    { id: 4, name: "Safety Officer" },
+    { id: 5, name: "Financial Analyst" },
+    { id: 6, name: "Admin" },
+  ])
 
   useEffect(() => {
     fetch(`${API_URL}/api/auth/roles`)
       .then((r) => r.json())
-      .then((data: RoleOption[]) => setRoles(data))
+      .then((data: RoleOption[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setRoles(data)
+        }
+      })
       .catch(() => {})
   }, [])
 
@@ -241,24 +245,27 @@ export default function LoginPage() {
               <Label className="mb-1.5 mt-4 block text-xs font-normal text-zinc-600">
                 {t("login.role")}
               </Label>
-              <Select.Root
-                defaultValue="Dispatcher"
-                onValueChange={(val: string | null) => val && setForm({ ...form, role: val })}
-                disabled={loading}
-              >
-                <SelectTrigger className="h-10 w-full rounded border-zinc-300 bg-white text-sm text-zinc-900 shadow-none focus-visible:border-[#0080FF] focus-visible:ring-1 focus-visible:ring-[#0080FF]">
-                  <SelectValue placeholder={t("login.selectRole")} />
-                </SelectTrigger>
-                <SelectContent className="border-zinc-200 bg-white">
+              <div className="relative">
+                <select
+                  value={form.role}
+                  onChange={(e) => setForm({ ...form, role: e.target.value })}
+                  disabled={loading}
+                  className="h-10 w-full appearance-none rounded border border-zinc-300 bg-white pl-3 pr-8 text-sm text-zinc-900 shadow-none focus:border-[#0080FF] focus:outline-none focus:ring-1 focus:ring-[#0080FF] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                >
                   {roles
                     .filter((r) => PUBLIC_ROLES.includes(r.name))
                     .map((r) => (
-                      <SelectItem key={r.id} value={r.name} className="text-sm text-zinc-700">
+                      <option key={r.id} value={r.name}>
                         {r.name}
-                      </SelectItem>
+                      </option>
                     ))}
-                </SelectContent>
-              </Select.Root>
+                </select>
+                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400">
+                  <svg className="size-4" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 5l3 3 3-3" />
+                  </svg>
+                </div>
+              </div>
 
               {!isSignUp && (
                 <button

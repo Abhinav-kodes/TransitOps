@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: transitops-db
     environment:
-      POSTGRES_USER: transitops_admin
-      POSTGRES_PASSWORD: internal_secure_pass
-      POSTGRES_DB: transitops_prod
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -21,8 +21,8 @@ services:
     container_name: transitops-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -40,15 +40,18 @@ services:
     volumes:
       - ./backend:/app
     environment:
-      - DATABASE_URL=postgresql+asyncpg://transitops_admin:internal_secure_pass@db:5432/transitops_prod
-      - SECRET_KEY=9a2f7c320d3f848529b4e5414d6438a9d18e225bb1536b9e28f3bb2511470e9a
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
-      - MINIO_SECURE=false
-      - MINIO_BUCKET=transitops-documents
-      - MINIO_EXTERNAL_URL=http://localhost:9000
-      - TOLLGURU_API_KEY=tg_4FE916BF3F704B51822BEE22A26A62BA
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_SECURE=${MINIO_SECURE}
+      - MINIO_BUCKET=${MINIO_BUCKET}
+      - MINIO_EXTERNAL_URL=${MINIO_EXTERNAL_URL}
+      - TOLLGURU_API_KEY=${TOLLGURU_API_KEY}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
+      - NOTIFICATION_EMAIL=${NOTIFICATION_EMAIL}
     depends_on:
       db:
         condition: service_healthy

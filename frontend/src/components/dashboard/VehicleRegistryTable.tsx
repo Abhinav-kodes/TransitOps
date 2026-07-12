@@ -14,6 +14,7 @@ interface Vehicle {
   odometer: number
   acq_cost: number
   status: "Available" | "On Trip" | "In Shop" | "Retired"
+  region?: string
   document_url: string | null
 }
 
@@ -129,6 +130,7 @@ export default function VehicleRegistryTable() {
               <th className="px-5 py-3 font-medium">{t("registry.regNo")}</th>
               <th className="px-5 py-3 font-medium">{t("registry.nameModel")}</th>
               <th className="px-5 py-3 font-medium">{t("registry.type")}</th>
+              <th className="px-5 py-3 font-medium">Region</th>
               <th className="px-5 py-3 font-medium">{t("registry.capacity")}</th>
               <th className="px-5 py-3 font-medium">{t("registry.odometer")}</th>
               <th className="px-5 py-3 font-medium">{t("registry.acqCost")}</th>
@@ -139,20 +141,20 @@ export default function VehicleRegistryTable() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-5 py-12 text-center">
+                <td colSpan={9} className="px-5 py-12 text-center">
                   <Loader2 className="mx-auto size-5 animate-spin text-zinc-400" />
                   <p className="mt-2 text-xs text-zinc-500">Loading vehicles...</p>
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={8} className="px-5 py-12 text-center">
+                <td colSpan={9} className="px-5 py-12 text-center">
                   <p className="text-xs text-red-500">{error}</p>
                 </td>
               </tr>
             ) : vehicles.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-5 py-12 text-center">
+                <td colSpan={9} className="px-5 py-12 text-center">
                   <p className="text-xs text-zinc-500">No vehicles found.</p>
                 </td>
               </tr>
@@ -165,6 +167,7 @@ export default function VehicleRegistryTable() {
                   <td className="px-5 py-3 font-medium text-zinc-900 dark:text-white">{v.reg_no}</td>
                   <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{v.name_model}</td>
                   <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{v.type}</td>
+                  <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{v.region || "North"}</td>
                   <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{formatNumber(v.capacity_kg)} kg</td>
                   <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{formatNumber(v.odometer)}</td>
                   <td className="px-5 py-3 text-zinc-600 dark:text-zinc-300">{formatNumber(v.acq_cost)}</td>

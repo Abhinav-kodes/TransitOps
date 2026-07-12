@@ -26,7 +26,13 @@ export default function KpiGrid({ filters }: KpiGridProps) {
           "Content-Type": "application/json",
           ...(token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {}),
         }
-        const res = await fetch(`${API_URL}/api/analytics/dashboard`, { headers })
+        const params = new URLSearchParams()
+        if (filters) {
+          if (filters.vehicleType) params.append("vehicleType", filters.vehicleType)
+          if (filters.status) params.append("status", filters.status)
+          if (filters.region) params.append("region", filters.region)
+        }
+        const res = await fetch(`${API_URL}/api/analytics/dashboard?${params.toString()}`, { headers })
         if (res.ok) {
           const result = await res.json()
           setData({

@@ -149,3 +149,146 @@ async def delete_driver(driver_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete a driver that is currently on a trip.")
     await db.delete(driver)
     await db.commit()
+
+@router.post("/drivers/remind-expiring", dependencies=[Depends(require_roles(FLEET_AND_SAFETY))])
+async def remind_expiring_licenses(
+    db: AsyncSession = Depends(get_db)
+):
+    """Checks for drivers with licenses expiring in the next 30 days and triggers real email reminders using SendGrid."""
+    import os
+    import httpx
+    from datetime import date, timedelta
+    
+    threshold_date = date.today() + timedelta(days=30)
+    stmt = select(Driver).where(Driver.expiry_date <= threshold_date)
+    res = await db.exec(stmt)
+    drivers = res.all()
+    
+    reminded = []
+    if not drivers:
+        return {
+            "status": "success",
+            "message": "No driver licenses expiring within the next 30 days.",
+            "reminded_drivers": []
+        }
+        
+    for driver in drivers:
+        reminded.append({
+            "id": driver.id,
+            "name": driver.name,
+            "license_no": driver.license_no,
+            "expiry_date": driver.expiry_date.isoformat()
+        })
+        
+    # Get SendGrid Configuration from environment
+    sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
+    sendgrid_from_email = os.getenv("SENDGRID_FROM_EMAIL") or "abhinav.2428cse938@kiet.edu"
+    
+    # We will send the report to the notification email target or fallback to a safety admin email
+    notification_email = os.getenv("NOTIFICATION_EMAIL") or "abhinavsingh6526@gmail.com"
+    
+    if sendgrid_api_key:
+        # Build nice HTML email body
+        driver_rows = "".join([
+            f"<tr>"
+            f"<td style='padding: 8px; border-bottom: 1px solid #ddd;'>{d['name']}</td>"
+            f"<td style='padding: 8px; border-bottom: 1px solid #ddd;'>{d['license_no']}</td>"
+            f"<td style='padding: 8px; border-bottom: 1px solid #ddd; color: #d9534f; font-weight: bold;'>{d['expiry_date']}</td>"
+            f"</tr>"
+            for d in reminded
+        ])
+        
+        email_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <h2 style="color: #0080FF; margin-bottom: 20px;">TransitOps License Expiry Warning</h2>
+                <p>Hello,</p>
+                <p>This is an automated safety compliance alert. The following drivers have commercial driver licenses (CDL) that have either expired or are expiring within the next 30 days:</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px;">
+                    <thead>
+                        <tr style="background-color: #f8fafc; text-align: left;">
+                            <th style="padding: 8px; border-bottom: 2px solid #ddd;">Driver Name</th>
+                            <th style="padding: 8px; border-bottom: 2px solid #ddd;">License No</th>
+                            <th style="padding: 8px; border-bottom: 2px solid #ddd;">Expiry Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {driver_rows}
+                    </tbody>
+                </table>
+                
+                <p style="font-weight: bold; color: #d9534f;">Please note: Drivers with expired licenses cannot be assigned to dispatches or active trips.</p>
+                <p>Best regards,<br>TransitOps Safety & Compliance Team</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Send mail via SendGrid REST API
+        payload = {
+            "personalizations": [
+                {
+                    "to": [{"email": notification_email, "name": notification_email}],
+                    "subject": f"TransitOps Alert: {len(reminded)} License Expiration Warning(s)"
+                }
+            ],
+            "from": {
+                "email": sendgrid_from_email,
+                "name": "TransitOps"
+            },
+            "reply_to": {
+                "email": "abhinav.2428cse938@kiet.edu",
+                "name": "TransitOps"
+            },
+            "content": [
+                {
+                    "type": "text/html",
+                    "value": email_content
+                }
+            ]
+        }
+        
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(
+                    "https://api.sendgrid.com/v3/mail/send",
+                    headers={
+                        "Authorization": f"Bearer {sendgrid_api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json=payload,
+                    timeout=10.0
+                )
+                print(f"SendGrid Response Status: {response.status_code}")
+                print(f"SendGrid Response Headers: {dict(response.headers)}")
+                print(f"SendGrid Response Text: {response.text}")
+                response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                error_body = e.response.text
+                print(f"SendGrid HTTP Error: {e.response.status_code} - {error_body}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to send email via SendGrid: {e.response.status_code} - {error_body}"
+                )
+            except Exception as e:
+                # Fallback print to logs and raising exception
+                print(f"SendGrid Error details: {str(e)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to send email via SendGrid: {str(e)}"
+                )
+    else:
+        # Fallback log print so user can see it in terminal, and return descriptive error info
+        print(f"[SendGrid Warning] SENDGRID_API_KEY not configured. Simulated dispatch alert for: {reminded}")
+        raise HTTPException(
+            status_code=400,
+            detail="SendGrid API Key is not configured. Please set SENDGRID_API_KEY and SENDGRID_FROM_EMAIL in docker-compose.yml environment variables."
+        )
+        
+    return {
+        "status": "success",
+        "message": f"Successfully sent email reminders to {notification_email} for {len(reminded)} driver(s).",
+        "reminded_drivers": reminded
+    }

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
+from typing import Optional
 from sqlmodel import select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -13,17 +14,52 @@ router = APIRouter()
 ALL_AUTHENTICATED = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"]
 
 @router.get("/dashboard", response_model=DashboardAnalyticsResponse, dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
-async def get_dashboard_analytics(db: AsyncSession = Depends(get_db)):
+async def get_dashboard_analytics(
+    vehicle_type: Optional[str] = Query(None, alias="vehicleType"),
+    status: Optional[str] = Query(None, alias="status"),
+    region: Optional[str] = Query(None, alias="region"),
+    db: AsyncSession = Depends(get_db)
+):
     """Computes all fleet operational KPIs and status distributions in real-time."""
     
+    # Helpers to apply filters dynamically
+    def apply_vehicle_filters(stmt):
+        if vehicle_type and vehicle_type != "all":
+            stmt = stmt.where(Vehicle.type == vehicle_type)
+        if status and status != "all":
+            stmt = stmt.where(Vehicle.status == status)
+        if region and region != "all":
+            stmt = stmt.where(Vehicle.region == region)
+        return stmt
+
+    def apply_trip_filters(stmt):
+        if (vehicle_type and vehicle_type != "all") or (region and region != "all") or (status and status != "all"):
+            stmt = stmt.join(Vehicle, Trip.vehicle_id == Vehicle.id)
+            if vehicle_type and vehicle_type != "all":
+                stmt = stmt.where(Vehicle.type == vehicle_type)
+            if region and region != "all":
+                stmt = stmt.where(Vehicle.region == region)
+            if status and status != "all":
+                stmt = stmt.where(Vehicle.status == status)
+        return stmt
+
     # 1. Total Vehicles & Fleet Utilization
-    total_vehicles_res = await db.exec(select(func.count(Vehicle.id)))
+    stmt_total_v = select(func.count(Vehicle.id))
+    stmt_total_v = apply_vehicle_filters(stmt_total_v)
+    total_vehicles_res = await db.exec(stmt_total_v)
     total_vehicles = total_vehicles_res.first() or 0
     
-    active_vehicles_res = await db.exec(
-        select(func.count(Vehicle.id)).where(Vehicle.status == VehicleStatus.ON_TRIP)
-    )
-    active_vehicles = active_vehicles_res.first() or 0
+    stmt_active_v = select(func.count(Vehicle.id)).where(Vehicle.status == VehicleStatus.ON_TRIP)
+    if vehicle_type and vehicle_type != "all":
+        stmt_active_v = stmt_active_v.where(Vehicle.type == vehicle_type)
+    if region and region != "all":
+        stmt_active_v = stmt_active_v.where(Vehicle.region == region)
+    
+    if status and status != "all" and status != VehicleStatus.ON_TRIP:
+        active_vehicles = 0
+    else:
+        active_vehicles_res = await db.exec(stmt_active_v)
+        active_vehicles = active_vehicles_res.first() or 0
     
     fleet_utilization = (active_vehicles / total_vehicles * 100) if total_vehicles > 0 else 0.0
     
@@ -34,34 +70,51 @@ async def get_dashboard_analytics(db: AsyncSession = Depends(get_db)):
     safety_incidents = suspended_drivers_res.first() or 0
     
     # 3. Total Trips
-    total_trips_res = await db.exec(select(func.count(Trip.id)))
+    stmt_total_t = select(func.count(Trip.id))
+    stmt_total_t = apply_trip_filters(stmt_total_t)
+    total_trips_res = await db.exec(stmt_total_t)
     total_trips = total_trips_res.first() or 0
     
-    completed_trips_res = await db.exec(
-        select(func.count(Trip.id)).where(Trip.status == "Completed")
-    )
+    # 4. On-Time Delivery Rate
+    stmt_comp_t = select(func.count(Trip.id)).where(Trip.status == "Completed")
+    stmt_comp_t = apply_trip_filters(stmt_comp_t)
+    completed_trips_res = await db.exec(stmt_comp_t)
     completed_trips = completed_trips_res.first() or 0
     on_time_delivery = (completed_trips / total_trips * 100) if total_trips > 0 else 100.0
 
     # Dashboard-specific metric queries
-    available_vehicles_res = await db.exec(
-        select(func.count(Vehicle.id)).where(Vehicle.status == VehicleStatus.AVAILABLE)
-    )
-    available_vehicles = available_vehicles_res.first() or 0
+    stmt_avail_v = select(func.count(Vehicle.id)).where(Vehicle.status == VehicleStatus.AVAILABLE)
+    if vehicle_type and vehicle_type != "all":
+        stmt_avail_v = stmt_avail_v.where(Vehicle.type == vehicle_type)
+    if region and region != "all":
+        stmt_avail_v = stmt_avail_v.where(Vehicle.region == region)
+    
+    if status and status != "all" and status != VehicleStatus.AVAILABLE:
+        available_vehicles = 0
+    else:
+        available_vehicles_res = await db.exec(stmt_avail_v)
+        available_vehicles = available_vehicles_res.first() or 0
 
-    maint_vehicles_res = await db.exec(
-        select(func.count(Vehicle.id)).where(Vehicle.status == VehicleStatus.IN_SHOP)
-    )
-    vehicles_in_maintenance = maint_vehicles_res.first() or 0
+    stmt_maint_v = select(func.count(Vehicle.id)).where(Vehicle.status == VehicleStatus.IN_SHOP)
+    if vehicle_type and vehicle_type != "all":
+        stmt_maint_v = stmt_maint_v.where(Vehicle.type == vehicle_type)
+    if region and region != "all":
+        stmt_maint_v = stmt_maint_v.where(Vehicle.region == region)
+        
+    if status and status != "all" and status != VehicleStatus.IN_SHOP:
+        vehicles_in_maintenance = 0
+    else:
+        maint_vehicles_res = await db.exec(stmt_maint_v)
+        vehicles_in_maintenance = maint_vehicles_res.first() or 0
 
-    active_trips_res = await db.exec(
-        select(func.count(Trip.id)).where(Trip.status == "Dispatched")
-    )
+    stmt_active_t = select(func.count(Trip.id)).where(Trip.status == "Dispatched")
+    stmt_active_t = apply_trip_filters(stmt_active_t)
+    active_trips_res = await db.exec(stmt_active_t)
     active_trips = active_trips_res.first() or 0
 
-    pending_trips_res = await db.exec(
-        select(func.count(Trip.id)).where(Trip.status == "Draft")
-    )
+    stmt_pending_t = select(func.count(Trip.id)).where(Trip.status == "Draft")
+    stmt_pending_t = apply_trip_filters(stmt_pending_t)
+    pending_trips_res = await db.exec(stmt_pending_t)
     pending_trips = pending_trips_res.first() or 0
 
     drivers_on_duty_res = await db.exec(

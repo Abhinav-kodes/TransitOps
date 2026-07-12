@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, RefreshCw, Download } from "lucide-react"
+import { ChevronDown, RefreshCw, Download, Mail, AlertCircle } from "lucide-react"
 import AddDriverDialog from "./AddDriverDialog"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
@@ -31,6 +31,40 @@ export default function DriverRegistryTable() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState("all")
   const [search, setSearch] = useState("")
+  const [reminderResult, setReminderResult] = useState<{ count: number; drivers: string[] } | null>(null)
+  const [reminderError, setReminderError] = useState<string | null>(null)
+  const [sendingReminders, setSendingReminders] = useState(false)
+
+  const handleSendReminders = async () => {
+    setSendingReminders(true)
+    setReminderResult(null)
+    setReminderError(null)
+    try {
+      const token = localStorage.getItem("transitops-token")
+      const res = await fetch(`${API_URL}/api/fleet/drivers/remind-expiring`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        const remindedDrivers = data.reminded_drivers || []
+        setReminderResult({
+          count: remindedDrivers.length,
+          drivers: remindedDrivers.map((d: any) => d.name),
+        })
+      } else {
+        setReminderError(data.detail || "Failed to trigger email reminders.")
+      }
+    } catch (err: any) {
+      setReminderError(err.message || "A network error occurred.")
+      console.error(err)
+    } finally {
+      setSendingReminders(false)
+    }
+  }
 
   const fetchDrivers = useCallback(async () => {
     setLoading(true)
@@ -61,6 +95,43 @@ export default function DriverRegistryTable() {
 
   return (
     <div className="rounded border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/40">
+      {/* Expiry Reminder Results Banner */}
+      {reminderResult && (
+        <div className="flex items-start gap-2 border-b border-zinc-100 bg-zinc-50/50 p-4 text-xs dark:border-zinc-800 dark:bg-zinc-950/20">
+          <AlertCircle className="size-4 shrink-0 mt-0.5 text-[#0080FF]" />
+          <div className="flex-1 text-zinc-600 dark:text-zinc-300">
+            <span className="font-semibold text-zinc-900 dark:text-white">Reminders Status: </span>
+            {reminderResult.count === 0 ? (
+              "No driver licenses expiring within the next 30 days."
+            ) : (
+              `Triggered email reminders to: ${reminderResult.drivers.join(", ")}.`
+            )}
+          </div>
+          <button
+            onClick={() => setReminderResult(null)}
+            className="text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {reminderError && (
+        <div className="flex items-start gap-2 border-b border-red-100 bg-red-50/50 p-4 text-xs dark:border-red-950/20 dark:bg-red-950/10">
+          <AlertCircle className="size-4 shrink-0 mt-0.5 text-red-500" />
+          <div className="flex-1 text-red-700 dark:text-red-400">
+            <span className="font-semibold">Reminder Error: </span>
+            {reminderError}
+          </div>
+          <button
+            onClick={() => setReminderError(null)}
+            className="text-xs text-red-400 hover:text-red-700 dark:hover:text-red-200"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Filter Bar */}
       <div className="flex flex-wrap items-center gap-3 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
         <div className="relative">
@@ -92,6 +163,16 @@ export default function DriverRegistryTable() {
           title="Refresh"
         >
           <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
+        </button>
+
+        <button
+          onClick={handleSendReminders}
+          disabled={sendingReminders}
+          className="inline-flex items-center gap-1.5 rounded border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          title="Send email reminders for licenses expiring soon"
+        >
+          <Mail className="size-3.5 text-zinc-400" />
+          {sendingReminders ? "Sending..." : "Send Expiry Reminders"}
         </button>
 
         <button

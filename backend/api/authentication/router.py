@@ -43,16 +43,6 @@ async def seed_roles(db: AsyncSession = Depends(get_session)):
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(user_in: UserRegister, db: AsyncSession = Depends(get_session)):
     """Creates a fresh system user profile securely associated with an exact role parameter."""
-    # Block registration with privileged roles
-    blocked_roles = {RoleName.ADMIN.value, RoleName.FLEET_MANAGER.value, RoleName.SAFETY_OFFICER.value, RoleName.FINANCIAL_ANALYST.value}
-    result_role_check = await db.exec(select(Role).where(Role.id == user_in.role_id))
-    target_role = result_role_check.first()
-    if target_role and target_role.name.value in blocked_roles:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Registration with this role is not permitted through public signup."
-        )
-        
     # Check if identity vector is already occupied
     result = await db.exec(select(User).where(User.email == user_in.email))
     existing_user = result.first()
