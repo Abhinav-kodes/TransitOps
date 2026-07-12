@@ -1,16 +1,9 @@
-import { useState } from "react"
-import { X, AlertCircle } from "lucide-react"
+import { useState, useRef } from "react"
+import { X, AlertCircle, Camera, ChevronDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
@@ -31,6 +24,7 @@ interface VehicleForm {
 
 export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicleDialogProps) {
   const { t } = useTranslation()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState<VehicleForm>({
     reg_no: "",
     name_model: "",
@@ -39,8 +33,21 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
     odometer: "0",
     acq_cost: "",
   })
+  const [photo, setPhoto] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Photo must be under 5 MB.")
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => setPhoto(reader.result as string)
+    reader.readAsDataURL(file)
+  }
 
   if (!open) return null
 
@@ -80,6 +87,7 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
       onCreated()
       onClose()
       setForm({ reg_no: "", name_model: "", type: "Van", capacity_kg: "", odometer: "0", acq_cost: "" })
+      setPhoto(null)
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.")
     } finally {
@@ -139,16 +147,19 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
               <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
                 {t("registry.type")} *
               </Label>
-              <Select.Root value={form.type} onValueChange={(val) => val && setForm({ ...form, type: val })} disabled={loading}>
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                  <SelectItem value="Van">Van</SelectItem>
-                  <SelectItem value="Truck">Truck</SelectItem>
-                  <SelectItem value="Mini">Mini</SelectItem>
-                </SelectContent>
-              </Select.Root>
+              <div className="relative">
+                <select
+                  value={form.type}
+                  onChange={(e) => setForm({ ...form, type: e.target.value })}
+                  disabled={loading}
+                  className="h-9 w-full appearance-none rounded border border-zinc-300 bg-white pl-3 pr-8 text-sm text-zinc-900 transition-colors hover:border-zinc-400 focus:border-[#0080FF] focus:outline-none focus:ring-1 focus:ring-[#0080FF] dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-500"
+                >
+                  <option value="Van">Van</option>
+                  <option value="Truck">Truck</option>
+                  <option value="Mini">Mini</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+              </div>
             </div>
 
             <div>
@@ -193,6 +204,47 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
                 disabled={loading}
                 className="h-9 text-sm"
               />
+            </div>
+          </div>
+
+          {/* Photo Upload Section */}
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 py-5 dark:border-zinc-700 dark:bg-zinc-800/40">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoChange}
+            />
+            <div className="relative">
+              <div className="flex size-20 items-center justify-center overflow-hidden rounded-full border-2 border-zinc-200 bg-white dark:border-zinc-600 dark:bg-zinc-800">
+                {photo ? (
+                  <img src={photo} alt="" className="size-full object-cover" />
+                ) : (
+                  <Camera className="size-7 text-zinc-300 dark:text-zinc-500" />
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading}
+                className="absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500 shadow-sm transition-colors hover:bg-zinc-50 hover:text-zinc-800 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+              >
+                <Camera className="size-3.5" />
+              </button>
+            </div>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading}
+                className="text-xs font-medium text-[#0080FF] hover:underline"
+              >
+                {photo ? t("driverRegistry.photoChange") : t("driverRegistry.photoUpload")}
+              </button>
+              <p className="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-500">
+                {t("driverRegistry.photoHint")}
+              </p>
             </div>
           </div>
 
