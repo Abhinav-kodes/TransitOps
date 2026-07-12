@@ -30,6 +30,19 @@ async def init_db() -> None:
     """Initializes schema definitions inside the target operational database."""
     async with async_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
+        
+    # Auto-seed the roles
+    from packages.db.models.auth import Role, RoleName
+    from sqlmodel import select
+    
+    async with AsyncSessionLocal() as session:
+        required_roles = [RoleName.FLEET_MANAGER, RoleName.DISPATCHER, RoleName.DRIVER, RoleName.ADMIN]
+        for role_name in required_roles:
+            result = await session.exec(select(Role).where(Role.name == role_name))
+            existing = result.first()
+            if not existing:
+                session.add(Role(name=role_name))
+        await session.commit()
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency provider yielding isolated atomic asynchronous sessions."""
