@@ -1,5 +1,5 @@
-import { useState, useRef } from "react"
-import { X, AlertCircle, Camera, ChevronDown } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { X, AlertCircle, ChevronDown, Camera } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,59 +7,60 @@ import { Label } from "@/components/ui/label"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
-interface AddVehicleDialogProps {
+interface Vehicle {
+  id: number
+  reg_no: string
+  name_model: string
+}
+
+interface AddExpenseDialogProps {
   open: boolean
   onClose: () => void
   onCreated: () => void
 }
 
-interface VehicleForm {
-  reg_no: string
-  name_model: string
-  type: string
-  capacity_kg: string
-  odometer: string
-  acq_cost: string
+interface ExpenseForm {
+  vehicle_id: string
+  trip_id: string
+  toll: string
+  other: string
+  maint_id: string
 }
 
-type FieldErrors = Partial<Record<keyof VehicleForm, string>>
+type FieldErrors = Partial<Record<keyof ExpenseForm, string>>
 
-function validateVehicleField(name: keyof VehicleForm, value: string): string {
+function validateField(name: keyof ExpenseForm, value: string): string {
   switch (name) {
-    case "reg_no":
-      if (!value.trim()) return "Registration number is required."
-      if (value.trim().length < 4) return "Must be at least 4 characters."
+    case "vehicle_id":
+      if (!value) return "Vehicle is required."
       return ""
-    case "name_model":
-      if (!value.trim()) return "Name / model is required."
-      if (value.trim().length < 2) return "Must be at least 2 characters."
-      return ""
-    case "capacity_kg":
-      if (!value) return "Capacity is required."
-      if (Number(value) <= 0) return "Must be greater than 0."
-      return ""
-    case "acq_cost":
-      if (!value) return "Acquisition cost is required."
-      if (Number(value) <= 0) return "Must be greater than 0."
-      return ""
-    case "odometer":
+    case "toll":
       if (value && Number(value) < 0) return "Cannot be negative."
+      return ""
+    case "other":
+      if (value && Number(value) < 0) return "Cannot be negative."
+      return ""
+    case "maint_id":
+      if (value && isNaN(Number(value))) return "Must be a number."
+      return ""
+    case "trip_id":
+      if (value && isNaN(Number(value))) return "Must be a number."
       return ""
     default:
       return ""
   }
 }
 
-export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicleDialogProps) {
+export default function AddExpenseDialog({ open, onClose, onCreated }: AddExpenseDialogProps) {
   const { t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [form, setForm] = useState<VehicleForm>({
-    reg_no: "",
-    name_model: "",
-    type: "Van",
-    capacity_kg: "",
-    odometer: "0",
-    acq_cost: "",
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [form, setForm] = useState<ExpenseForm>({
+    vehicle_id: "",
+    trip_id: "",
+    toll: "0",
+    other: "0",
+    maint_id: "",
   })
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
@@ -67,6 +68,31 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    const token = localStorage.getItem("transitops-token")
+    fetch(`${API_URL}/api/fleet/vehicles`, {
+      headers: token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((r) => r.json())
+      .then((data) => setVehicles(data))
+      .catch(() => {})
+  }, [open])
+
+  const handleBlur = (name: keyof ExpenseForm) => {
+    setTouched((prev) => ({ ...prev, [name]: true }))
+    const msg = validateField(name, form[name])
+    setFieldErrors((prev) => ({ ...prev, [name]: msg }))
+  }
+
+  const handleChange = (name: keyof ExpenseForm, value: string) => {
+    setForm((prev) => ({ ...prev, [name]: value }))
+    if (touched[name]) {
+      const msg = validateField(name, value)
+      setFieldErrors((prev) => ({ ...prev, [name]: msg }))
+    }
+  }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -81,20 +107,6 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
     reader.readAsDataURL(file)
   }
 
-  const handleBlur = (name: keyof VehicleForm) => {
-    setTouched((prev) => ({ ...prev, [name]: true }))
-    const msg = validateVehicleField(name, form[name])
-    setFieldErrors((prev) => ({ ...prev, [name]: msg }))
-  }
-
-  const handleChange = (name: keyof VehicleForm, value: string) => {
-    setForm((prev) => ({ ...prev, [name]: value }))
-    if (touched[name]) {
-      const msg = validateVehicleField(name, value)
-      setFieldErrors((prev) => ({ ...prev, [name]: msg }))
-    }
-  }
-
   if (!open) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,9 +115,9 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
 
     const allTouched: Record<string, boolean> = {}
     const allErrors: FieldErrors = {}
-    for (const key of Object.keys(form) as (keyof VehicleForm)[]) {
+    for (const key of Object.keys(form) as (keyof ExpenseForm)[]) {
       allTouched[key] = true
-      allErrors[key] = validateVehicleField(key, form[key])
+      allErrors[key] = validateField(key, form[key])
     }
     setTouched(allTouched)
     setFieldErrors(allErrors)
@@ -115,30 +127,29 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
     setLoading(true)
     try {
       const token = localStorage.getItem("transitops-token")
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        ...(token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {}),
+      const body: Record<string, any> = {
+        vehicle_id: parseInt(form.vehicle_id),
+        toll: parseFloat(form.toll) || 0,
+        other: parseFloat(form.other) || 0,
       }
+      if (form.trip_id) body.trip_id = parseInt(form.trip_id)
+      if (form.maint_id) body.maint_id = parseInt(form.maint_id)
 
-      const res = await fetch(`${API_URL}/api/fleet/vehicles`, {
+      const res = await fetch(`${API_URL}/api/finance/expenses`, {
         method: "POST",
-        headers,
-        body: JSON.stringify({
-          reg_no: form.reg_no.trim(),
-          name_model: form.name_model.trim(),
-          type: form.type,
-          capacity_kg: parseInt(form.capacity_kg),
-          odometer: parseInt(form.odometer) || 0,
-          acq_cost: parseFloat(form.acq_cost),
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body),
       })
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.detail || "Failed to create vehicle.")
+        throw new Error(data.detail || "Failed to add expense.")
       }
 
-      const vehicle = await res.json()
+      const expense = await res.json()
 
       if (photoFile) {
         const uploadHeaders: Record<string, string> = {
@@ -146,9 +157,9 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
         }
         const formData = new FormData()
         formData.append("file", photoFile)
-        formData.append("entity_type", "vehicle")
-        formData.append("entity_id", String(vehicle.id))
-        formData.append("label", "document")
+        formData.append("entity_type", "expense")
+        formData.append("entity_id", String(expense.id))
+        formData.append("label", "receipt")
 
         await fetch(`${API_URL}/api/documents/upload`, {
           method: "POST",
@@ -159,7 +170,7 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
 
       onCreated()
       onClose()
-      setForm({ reg_no: "", name_model: "", type: "Van", capacity_kg: "", odometer: "0", acq_cost: "" })
+      setForm({ vehicle_id: "", trip_id: "", toll: "0", other: "0", maint_id: "" })
       setFieldErrors({})
       setTouched({})
       setPhotoPreview(null)
@@ -171,7 +182,7 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
     }
   }
 
-  const inputClass = (name: keyof VehicleForm) =>
+  const inputClass = (name: keyof ExpenseForm) =>
     `h-9 text-sm ${fieldErrors[name] && touched[name] ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500" : ""}`
 
   return (
@@ -180,7 +191,7 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
       <div className="relative z-10 w-full max-w-md rounded-lg border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
-            {t("registry.addVehicle")}
+            {t("fuelExpensesPage.addExpense")}
           </h2>
           <button onClick={onClose} className="rounded p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
             <X className="size-4" />
@@ -197,73 +208,62 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
-              {t("registry.regNo")} *
+              {t("fuelExpensesPage.vehicle")} *
             </Label>
-            <Input
-              placeholder="GJ01AB1234"
-              value={form.reg_no}
-              onChange={(e) => handleChange("reg_no", e.target.value)}
-              onBlur={() => handleBlur("reg_no")}
-              disabled={loading}
-              className={inputClass("reg_no")}
-            />
-            {fieldErrors.reg_no && touched.reg_no && (
-              <p className="mt-1 text-[11px] text-red-500">{fieldErrors.reg_no}</p>
-            )}
-          </div>
-
-          <div>
-            <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
-              {t("registry.nameModel")} *
-            </Label>
-            <Input
-              placeholder="VAN-05"
-              value={form.name_model}
-              onChange={(e) => handleChange("name_model", e.target.value)}
-              onBlur={() => handleBlur("name_model")}
-              disabled={loading}
-              className={inputClass("name_model")}
-            />
-            {fieldErrors.name_model && touched.name_model && (
-              <p className="mt-1 text-[11px] text-red-500">{fieldErrors.name_model}</p>
+            <div className="relative">
+              <select
+                value={form.vehicle_id}
+                onChange={(e) => handleChange("vehicle_id", e.target.value)}
+                onBlur={() => handleBlur("vehicle_id")}
+                disabled={loading}
+                className={`h-9 w-full appearance-none rounded border border-zinc-300 bg-white pl-3 pr-8 text-sm text-zinc-900 transition-colors hover:border-zinc-400 focus:border-[#0080FF] focus:outline-none focus:ring-1 focus:ring-[#0080FF] dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-500 ${inputClass("vehicle_id")}`}
+              >
+                <option value="">Select vehicle...</option>
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>{v.reg_no} — {v.name_model}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+            </div>
+            {fieldErrors.vehicle_id && touched.vehicle_id && (
+              <p className="mt-1 text-[11px] text-red-500">{fieldErrors.vehicle_id}</p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
-                {t("registry.type")} *
+                {t("fuelExpensesPage.trip")} (ID)
               </Label>
-              <div className="relative">
-                <select
-                  value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value })}
-                  disabled={loading}
-                  className="h-9 w-full appearance-none rounded border border-zinc-300 bg-white pl-3 pr-8 text-sm text-zinc-900 transition-colors hover:border-zinc-400 focus:border-[#0080FF] focus:outline-none focus:ring-1 focus:ring-[#0080FF] dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-500"
-                >
-                  <option value="Van">Van</option>
-                  <option value="Truck">Truck</option>
-                  <option value="Mini">Mini</option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
-              </div>
+              <Input
+                type="number"
+                placeholder="TR001"
+                value={form.trip_id}
+                onChange={(e) => handleChange("trip_id", e.target.value)}
+                onBlur={() => handleBlur("trip_id")}
+                disabled={loading}
+                className={inputClass("trip_id")}
+              />
+              {fieldErrors.trip_id && touched.trip_id && (
+                <p className="mt-1 text-[11px] text-red-500">{fieldErrors.trip_id}</p>
+              )}
             </div>
 
             <div>
               <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
-                {t("registry.capacity")} (kg) *
+                {t("fuelExpensesPage.maintLinked")} (ID)
               </Label>
               <Input
                 type="number"
-                placeholder="500"
-                value={form.capacity_kg}
-                onChange={(e) => handleChange("capacity_kg", e.target.value)}
-                onBlur={() => handleBlur("capacity_kg")}
+                placeholder="Optional"
+                value={form.maint_id}
+                onChange={(e) => handleChange("maint_id", e.target.value)}
+                onBlur={() => handleBlur("maint_id")}
                 disabled={loading}
-                className={inputClass("capacity_kg")}
+                className={inputClass("maint_id")}
               />
-              {fieldErrors.capacity_kg && touched.capacity_kg && (
-                <p className="mt-1 text-[11px] text-red-500">{fieldErrors.capacity_kg}</p>
+              {fieldErrors.maint_id && touched.maint_id && (
+                <p className="mt-1 text-[11px] text-red-500">{fieldErrors.maint_id}</p>
               )}
             </div>
           </div>
@@ -271,37 +271,37 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
-                {t("registry.odometer")}
+                {t("fuelExpensesPage.toll")}
               </Label>
               <Input
                 type="number"
                 placeholder="0"
-                value={form.odometer}
-                onChange={(e) => handleChange("odometer", e.target.value)}
-                onBlur={() => handleBlur("odometer")}
+                value={form.toll}
+                onChange={(e) => handleChange("toll", e.target.value)}
+                onBlur={() => handleBlur("toll")}
                 disabled={loading}
-                className={inputClass("odometer")}
+                className={inputClass("toll")}
               />
-              {fieldErrors.odometer && touched.odometer && (
-                <p className="mt-1 text-[11px] text-red-500">{fieldErrors.odometer}</p>
+              {fieldErrors.toll && touched.toll && (
+                <p className="mt-1 text-[11px] text-red-500">{fieldErrors.toll}</p>
               )}
             </div>
 
             <div>
               <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
-                {t("registry.acqCost")} *
+                {t("fuelExpensesPage.other")}
               </Label>
               <Input
                 type="number"
-                placeholder="620000"
-                value={form.acq_cost}
-                onChange={(e) => handleChange("acq_cost", e.target.value)}
-                onBlur={() => handleBlur("acq_cost")}
+                placeholder="0"
+                value={form.other}
+                onChange={(e) => handleChange("other", e.target.value)}
+                onBlur={() => handleBlur("other")}
                 disabled={loading}
-                className={inputClass("acq_cost")}
+                className={inputClass("other")}
               />
-              {fieldErrors.acq_cost && touched.acq_cost && (
-                <p className="mt-1 text-[11px] text-red-500">{fieldErrors.acq_cost}</p>
+              {fieldErrors.other && touched.other && (
+                <p className="mt-1 text-[11px] text-red-500">{fieldErrors.other}</p>
               )}
             </div>
           </div>
@@ -339,10 +339,10 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
                 disabled={loading}
                 className="text-xs font-medium text-[#0080FF] hover:underline"
               >
-                {photoPreview ? t("driverRegistry.photoChange") : t("driverRegistry.photoUpload")}
+                {photoPreview ? "Change photo" : "Upload receipt"}
               </button>
               <p className="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-500">
-                {t("driverRegistry.photoHint")}
+                JPG or PNG, max 5 MB
               </p>
             </div>
           </div>
@@ -362,7 +362,7 @@ export default function AddVehicleDialog({ open, onClose, onCreated }: AddVehicl
               disabled={loading}
               className="h-9 px-4 text-sm bg-[#0080FF] text-white hover:bg-[#006ce6]"
             >
-              {loading ? "Saving..." : t("registry.addVehicle")}
+              {loading ? "Saving..." : t("fuelExpensesPage.addExpense")}
             </Button>
           </div>
         </form>

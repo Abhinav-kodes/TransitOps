@@ -13,8 +13,12 @@ const NAV = [
     { labelKey: "sidebar.allDrivers", path: "/drivers" },
   ]},
   { labelKey: "sidebar.trips", icon: <Map className="size-4" />, comingSoon: true, path: "/trips" },
-  { labelKey: "sidebar.maintenance", icon: <Wrench className="size-4" />, comingSoon: true, path: "/maintenance" },
-  { labelKey: "sidebar.fuelExpenses", icon: <Fuel className="size-4" />, comingSoon: true, path: "/fuel-expenses" },
+  { labelKey: "sidebar.maintenance", icon: <Wrench className="size-4" />, children: [
+    { labelKey: "sidebar.serviceLog", path: "/maintenance" },
+  ]},
+  { labelKey: "sidebar.fuelExpenses", icon: <Fuel className="size-4" />, children: [
+    { labelKey: "sidebar.allRecords", path: "/fuel-expenses" },
+  ]},
   { labelKey: "sidebar.analytics", icon: <BarChart3 className="size-4" />, comingSoon: true, path: "/analytics" },
   { labelKey: "sidebar.settings", icon: <Settings className="size-4" />, comingSoon: true, path: "/settings" },
 ]

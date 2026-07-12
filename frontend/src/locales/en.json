@@ -39,6 +39,8 @@
     "safetyScores": "Safety Scores",
     "trips": "Trips",
     "fuelExpenses": "Fuel & Expenses",
+    "allRecords": "All Records",
+    "serviceLog": "Service Log",
     "analytics": "Analytics",
     "settings": "Settings"
   },
@@ -127,5 +129,33 @@
     "maintLinked": "MAINT. (LINKED)",
     "total": "TOTAL",
     "totalOperationalCost": "TOTAL OPERATIONAL COST (AUTO) = FUEL + MAINT"
+  },
+  "maintenancePage": {
+    "title": "Maintenance",
+    "subtitle": "Track vehicle service records, repair costs, and maintenance schedules.",
+    "logServiceRecord": "LOG SERVICE RECORD",
+    "vehicle": "VEHICLE",
+    "serviceType": "SERVICE TYPE",
+    "cost": "COST",
+    "date": "DATE",
+    "status": "STATUS",
+    "save": "Save",
+    "serviceLog": "SERVICE LOG",
+    "service": "SERVICE",
+    "systemNote": "Note: In Shop vehicles are removed from the dispatch pool."
+  },
+  "maintenanceRegistry": {
+    "statusAll": "All Status",
+    "active": "Active",
+    "completed": "Completed",
+    "searchPlaceholder": "Search vehicle...",
+    "addMaintenance": "Add Maintenance",
+    "vehicle": "VEHICLE",
+    "serviceType": "SERVICE TYPE",
+    "cost": "COST",
+    "entryDate": "ENTRY DATE",
+    "status": "STATUS",
+    "noRecords": "No maintenance records found.",
+    "systemNote": "Note: In Shop vehicles are removed from the dispatch pool."
   }
 }

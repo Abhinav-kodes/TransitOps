@@ -1,4 +1,7 @@
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
+import AddFuelDialog from "./AddFuelDialog"
+import AddExpenseDialog from "./AddExpenseDialog"
 
 const FUEL_LOGS = [
   { vehicle: "VAN-05", date: "05 Jul 2026", liters: "42 L", fuelCost: "3,150" },
@@ -13,6 +16,8 @@ const EXPENSES = [
 
 export default function FuelExpensesContent() {
   const { t } = useTranslation()
+  const [fuelDialogOpen, setFuelDialogOpen] = useState(false)
+  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false)
 
   return (
     <div className="space-y-8">
@@ -22,14 +27,12 @@ export default function FuelExpensesContent() {
           <h2 className="text-sm font-semibold tracking-wide text-zinc-900 dark:text-white">
             {t("fuelExpensesPage.fuelLogs")}
           </h2>
-          <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-1.5 rounded bg-[#0080FF] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#006ce6]">
-              + {t("fuelExpensesPage.logFuel")}
-            </button>
-            <button className="inline-flex items-center gap-1.5 rounded border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800">
-              + {t("fuelExpensesPage.addExpense")}
-            </button>
-          </div>
+          <button
+            onClick={() => setFuelDialogOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded bg-[#0080FF] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#006ce6]"
+          >
+            + {t("fuelExpensesPage.logFuel")}
+          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -61,10 +64,16 @@ export default function FuelExpensesContent() {
 
       {/* Other Expenses Section */}
       <div className="rounded border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/40">
-        <div className="border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
+        <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
           <h2 className="text-sm font-semibold tracking-wide text-zinc-900 dark:text-white">
             {t("fuelExpensesPage.otherExpenses")}
           </h2>
+          <button
+            onClick={() => setExpenseDialogOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            + {t("fuelExpensesPage.addExpense")}
+          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -115,6 +124,17 @@ export default function FuelExpensesContent() {
           34,070
         </span>
       </div>
+
+      <AddFuelDialog
+        open={fuelDialogOpen}
+        onClose={() => setFuelDialogOpen(false)}
+        onCreated={() => {}}
+      />
+      <AddExpenseDialog
+        open={expenseDialogOpen}
+        onClose={() => setExpenseDialogOpen(false)}
+        onCreated={() => {}}
+      />
     </div>
   )
 }

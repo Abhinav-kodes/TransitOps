@@ -1,5 +1,5 @@
-import { useState, useRef } from "react"
-import { X, AlertCircle, Camera, ChevronDown } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { X, AlertCircle, ChevronDown, Camera } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,54 +7,56 @@ import { Label } from "@/components/ui/label"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
-interface AddDriverDialogProps {
+interface Vehicle {
+  id: number
+  reg_no: string
+  name_model: string
+}
+
+interface AddMaintenanceDialogProps {
   open: boolean
   onClose: () => void
   onCreated: () => void
 }
 
-interface DriverForm {
-  name: string
-  license_no: string
-  category: string
-  expiry_date: string
-  contact_no: string
+interface MaintenanceForm {
+  vehicle_id: string
+  service_type: string
+  cost: string
+  entry_date: string
 }
 
-type FieldErrors = Partial<Record<keyof DriverForm, string>>
+type FieldErrors = Partial<Record<keyof MaintenanceForm, string>>
 
-function validateDriverField(name: keyof DriverForm, value: string): string {
+function validateField(name: keyof MaintenanceForm, value: string): string {
   switch (name) {
-    case "name":
-      if (!value.trim()) return "Driver name is required."
-      if (value.trim().length < 2) return "Must be at least 2 characters."
+    case "vehicle_id":
+      if (!value) return "Vehicle is required."
       return ""
-    case "license_no":
-      if (!value.trim()) return "License number is required."
-      if (value.trim().length < 5) return "Must be at least 5 characters."
+    case "service_type":
+      if (!value.trim()) return "Service type is required."
       return ""
-    case "expiry_date":
-      if (!value) return "Expiry date is required."
-      if (new Date(value) < new Date()) return "License has already expired."
+    case "cost":
+      if (!value) return "Cost is required."
+      if (Number(value) < 0) return "Cannot be negative."
       return ""
-    case "contact_no":
-      if (!value.trim()) return "Contact number is required."
-      if (value.trim().length < 6) return "Must be at least 6 characters."
+    case "entry_date":
+      if (!value) return "Date is required."
       return ""
     default:
       return ""
   }
 }
 
-export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverDialogProps) {
+export default function AddMaintenanceDialog({ open, onClose, onCreated }: AddMaintenanceDialogProps) {
   const { t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [form, setForm] = useState<DriverForm>({
-    name: "",
-    license_no: "",
-    category: "LMV",
-    expiry_date: "",
-    contact_no: "",
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [form, setForm] = useState<MaintenanceForm>({
+    vehicle_id: "",
+    service_type: "",
+    cost: "",
+    entry_date: "",
   })
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
@@ -62,6 +64,31 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    const token = localStorage.getItem("transitops-token")
+    fetch(`${API_URL}/api/fleet/vehicles`, {
+      headers: token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((r) => r.json())
+      .then((data) => setVehicles(data))
+      .catch(() => {})
+  }, [open])
+
+  const handleBlur = (name: keyof MaintenanceForm) => {
+    setTouched((prev) => ({ ...prev, [name]: true }))
+    const msg = validateField(name, form[name])
+    setFieldErrors((prev) => ({ ...prev, [name]: msg }))
+  }
+
+  const handleChange = (name: keyof MaintenanceForm, value: string) => {
+    setForm((prev) => ({ ...prev, [name]: value }))
+    if (touched[name]) {
+      const msg = validateField(name, value)
+      setFieldErrors((prev) => ({ ...prev, [name]: msg }))
+    }
+  }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -76,20 +103,6 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
     reader.readAsDataURL(file)
   }
 
-  const handleBlur = (name: keyof DriverForm) => {
-    setTouched((prev) => ({ ...prev, [name]: true }))
-    const msg = validateDriverField(name, form[name])
-    setFieldErrors((prev) => ({ ...prev, [name]: msg }))
-  }
-
-  const handleChange = (name: keyof DriverForm, value: string) => {
-    setForm((prev) => ({ ...prev, [name]: value }))
-    if (touched[name]) {
-      const msg = validateDriverField(name, value)
-      setFieldErrors((prev) => ({ ...prev, [name]: msg }))
-    }
-  }
-
   if (!open) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,9 +111,9 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
 
     const allTouched: Record<string, boolean> = {}
     const allErrors: FieldErrors = {}
-    for (const key of Object.keys(form) as (keyof DriverForm)[]) {
+    for (const key of Object.keys(form) as (keyof MaintenanceForm)[]) {
       allTouched[key] = true
-      allErrors[key] = validateDriverField(key, form[key])
+      allErrors[key] = validateField(key, form[key])
     }
     setTouched(allTouched)
     setFieldErrors(allErrors)
@@ -110,29 +123,26 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
     setLoading(true)
     try {
       const token = localStorage.getItem("transitops-token")
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        ...(token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {}),
-      }
-
-      const res = await fetch(`${API_URL}/api/fleet/drivers`, {
+      const res = await fetch(`${API_URL}/api/operations/maintenance`, {
         method: "POST",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
-          name: form.name.trim(),
-          license_no: form.license_no.trim(),
-          category: form.category,
-          expiry_date: form.expiry_date,
-          contact_no: form.contact_no.trim(),
+          vehicle_id: parseInt(form.vehicle_id),
+          service_type: form.service_type.trim(),
+          cost: parseFloat(form.cost),
+          entry_date: form.entry_date,
         }),
       })
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.detail || "Failed to create driver.")
+        throw new Error(data.detail || "Failed to log service record.")
       }
 
-      const driver = await res.json()
+      const maintenance = await res.json()
 
       if (photoFile) {
         const uploadHeaders: Record<string, string> = {
@@ -140,9 +150,9 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
         }
         const formData = new FormData()
         formData.append("file", photoFile)
-        formData.append("entity_type", "driver")
-        formData.append("entity_id", String(driver.id))
-        formData.append("label", "license")
+        formData.append("entity_type", "maintenance_log")
+        formData.append("entity_id", String(maintenance.id))
+        formData.append("label", "bill")
 
         await fetch(`${API_URL}/api/documents/upload`, {
           method: "POST",
@@ -153,7 +163,7 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
 
       onCreated()
       onClose()
-      setForm({ name: "", license_no: "", category: "LMV", expiry_date: "", contact_no: "" })
+      setForm({ vehicle_id: "", service_type: "", cost: "", entry_date: "" })
       setFieldErrors({})
       setTouched({})
       setPhotoPreview(null)
@@ -165,7 +175,7 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
     }
   }
 
-  const inputClass = (name: keyof DriverForm) =>
+  const inputClass = (name: keyof MaintenanceForm) =>
     `h-9 text-sm ${fieldErrors[name] && touched[name] ? "border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500" : ""}`
 
   return (
@@ -174,7 +184,7 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
       <div className="relative z-10 w-full max-w-md rounded-lg border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
-            {t("driverRegistry.addDriver")}
+            {t("maintenancePage.logServiceRecord")}
           </h2>
           <button onClick={onClose} className="rounded p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
             <X className="size-4" />
@@ -191,90 +201,80 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
-              {t("driverRegistry.name")} *
+              {t("maintenancePage.vehicle")} *
             </Label>
-            <Input
-              placeholder="John Doe"
-              value={form.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-              onBlur={() => handleBlur("name")}
-              disabled={loading}
-              className={inputClass("name")}
-            />
-            {fieldErrors.name && touched.name && (
-              <p className="mt-1 text-[11px] text-red-500">{fieldErrors.name}</p>
+            <div className="relative">
+              <select
+                value={form.vehicle_id}
+                onChange={(e) => handleChange("vehicle_id", e.target.value)}
+                onBlur={() => handleBlur("vehicle_id")}
+                disabled={loading}
+                className={`h-9 w-full appearance-none rounded border border-zinc-300 bg-white pl-3 pr-8 text-sm text-zinc-900 transition-colors hover:border-zinc-400 focus:border-[#0080FF] focus:outline-none focus:ring-1 focus:ring-[#0080FF] dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-500 ${inputClass("vehicle_id")}`}
+              >
+                <option value="">Select vehicle...</option>
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>{v.reg_no} — {v.name_model}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+            </div>
+            {fieldErrors.vehicle_id && touched.vehicle_id && (
+              <p className="mt-1 text-[11px] text-red-500">{fieldErrors.vehicle_id}</p>
             )}
           </div>
 
           <div>
             <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
-              {t("driverRegistry.licenseNo")} *
+              {t("maintenancePage.serviceType")} *
             </Label>
             <Input
-              placeholder="MH-12-2023-0045231"
-              value={form.license_no}
-              onChange={(e) => handleChange("license_no", e.target.value)}
-              onBlur={() => handleBlur("license_no")}
+              placeholder="Oil Change"
+              value={form.service_type}
+              onChange={(e) => handleChange("service_type", e.target.value)}
+              onBlur={() => handleBlur("service_type")}
               disabled={loading}
-              className={inputClass("license_no")}
+              className={inputClass("service_type")}
             />
-            {fieldErrors.license_no && touched.license_no && (
-              <p className="mt-1 text-[11px] text-red-500">{fieldErrors.license_no}</p>
+            {fieldErrors.service_type && touched.service_type && (
+              <p className="mt-1 text-[11px] text-red-500">{fieldErrors.service_type}</p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
-                {t("driverRegistry.category")} *
+                {t("maintenancePage.cost")} *
               </Label>
-              <div className="relative">
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  disabled={loading}
-                  className="h-9 w-full appearance-none rounded border border-zinc-300 bg-white pl-3 pr-8 text-sm text-zinc-900 transition-colors hover:border-zinc-400 focus:border-[#0080FF] focus:outline-none focus:ring-1 focus:ring-[#0080FF] dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-500"
-                >
-                  <option value="LMV">LMV</option>
-                  <option value="HMV">HMV</option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
-              </div>
+              <Input
+                type="number"
+                placeholder="2500"
+                value={form.cost}
+                onChange={(e) => handleChange("cost", e.target.value)}
+                onBlur={() => handleBlur("cost")}
+                disabled={loading}
+                className={inputClass("cost")}
+              />
+              {fieldErrors.cost && touched.cost && (
+                <p className="mt-1 text-[11px] text-red-500">{fieldErrors.cost}</p>
+              )}
             </div>
 
             <div>
               <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
-                {t("driverRegistry.expiryDate")} *
+                {t("maintenancePage.date")} *
               </Label>
               <Input
                 type="date"
-                value={form.expiry_date}
-                onChange={(e) => handleChange("expiry_date", e.target.value)}
-                onBlur={() => handleBlur("expiry_date")}
+                value={form.entry_date}
+                onChange={(e) => handleChange("entry_date", e.target.value)}
+                onBlur={() => handleBlur("entry_date")}
                 disabled={loading}
-                className={inputClass("expiry_date")}
+                className={inputClass("entry_date")}
               />
-              {fieldErrors.expiry_date && touched.expiry_date && (
-                <p className="mt-1 text-[11px] text-red-500">{fieldErrors.expiry_date}</p>
+              {fieldErrors.entry_date && touched.entry_date && (
+                <p className="mt-1 text-[11px] text-red-500">{fieldErrors.entry_date}</p>
               )}
             </div>
-          </div>
-
-          <div>
-            <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
-              {t("driverRegistry.contactNo")} *
-            </Label>
-            <Input
-              placeholder="+91 98765 43210"
-              value={form.contact_no}
-              onChange={(e) => handleChange("contact_no", e.target.value)}
-              onBlur={() => handleBlur("contact_no")}
-              disabled={loading}
-              className={inputClass("contact_no")}
-            />
-            {fieldErrors.contact_no && touched.contact_no && (
-              <p className="mt-1 text-[11px] text-red-500">{fieldErrors.contact_no}</p>
-            )}
           </div>
 
           {/* Photo Upload Section */}
@@ -310,10 +310,10 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
                 disabled={loading}
                 className="text-xs font-medium text-[#0080FF] hover:underline"
               >
-                {photoPreview ? t("driverRegistry.photoChange") : t("driverRegistry.photoUpload")}
+                {photoPreview ? "Change photo" : "Upload bill"}
               </button>
               <p className="mt-0.5 text-[10px] text-zinc-400 dark:text-zinc-500">
-                {t("driverRegistry.photoHint")}
+                JPG or PNG, max 5 MB
               </p>
             </div>
           </div>
@@ -333,7 +333,7 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
               disabled={loading}
               className="h-9 px-4 text-sm bg-[#0080FF] text-white hover:bg-[#006ce6]"
             >
-              {loading ? "Saving..." : t("driverRegistry.addDriver")}
+              {loading ? "Saving..." : t("maintenancePage.save")}
             </Button>
           </div>
         </form>

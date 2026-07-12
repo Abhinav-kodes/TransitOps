@@ -39,6 +39,8 @@
     "safetyScores": "सुरक्षा स्कोर",
     "trips": "यात्राएं",
     "fuelExpenses": "ईंधन और खर्च",
+    "allRecords": "सभी रिकॉर्ड",
+    "serviceLog": "सेवा लॉग",
     "analytics": "विश्लेषण",
     "settings": "सेटिंग्स"
   },
@@ -127,5 +129,33 @@
     "maintLinked": "रखरखाव (लिंक्ड)",
     "total": "कुल",
     "totalOperationalCost": "कुल परिचालन लागत (ऑटो) = ईंधन + रखरखाव"
+  },
+  "maintenancePage": {
+    "title": "रखरखाव",
+    "subtitle": "वाहन सेवा रिकॉर्ड, मरम्मत लागत और रखरखाव कार्यक्रमों को ट्रैक करें।",
+    "logServiceRecord": "सेवा रिकॉर्ड लॉग करें",
+    "vehicle": "वाहन",
+    "serviceType": "सेवा प्रकार",
+    "cost": "लागत",
+    "date": "तिथि",
+    "status": "स्थिति",
+    "save": "सहेजें",
+    "serviceLog": "सेवा लॉग",
+    "service": "सेवा",
+    "systemNote": "नोट: दुकान में वाहन डिस्पैच पूल से हटा दिए जाते हैं।"
+  },
+  "maintenanceRegistry": {
+    "statusAll": "सभी स्थिति",
+    "active": "सक्रिय",
+    "completed": "पूर्ण",
+    "searchPlaceholder": "वाहन खोजें...",
+    "addMaintenance": "रखरखाव जोड़ें",
+    "vehicle": "वाहन",
+    "serviceType": "सेवा प्रकार",
+    "cost": "लागत",
+    "entryDate": "प्रवेश तिथि",
+    "status": "स्थिति",
+    "noRecords": "कोई रखरखाव रिकॉर्ड नहीं मिला।",
+    "systemNote": "नोट: दुकान में वाहन डिस्पैच पूल से हटा दिए जाते हैं।"
   }
 }
