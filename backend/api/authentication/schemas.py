@@ -22,6 +22,10 @@ class UserResponse(BaseModel):
     email: EmailStr
     role_id: int
     role_name: str = ""
+    driver_id: Optional[int] = None
+    driver_safety_score: Optional[int] = None
+    driver_status: Optional[str] = None
+    driver_license_no: Optional[str] = None
 
     class Config:
         from_attributes = True

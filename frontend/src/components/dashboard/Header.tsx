@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next"
-import { Moon, Sun, Globe, Bell, LogOut, Search } from "lucide-react"
+import { Moon, Sun, Globe, Bell, LogOut, Search, Shield } from "lucide-react"
 import { useTheme } from "@/lib/theme"
 import { useAuth } from "@/lib/auth"
 import i18n from "@/lib/i18n"
@@ -70,6 +70,12 @@ export default function Header() {
           <span className="rounded-full bg-[#0080FF]/10 px-2.5 py-0.5 text-[10px] font-semibold text-[#0080FF]">
             {roleName}
           </span>
+          {user?.driverSafetyScore !== undefined && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+              <Shield className="size-3" />
+              {user.driverSafetyScore}
+            </span>
+          )}
           <div className="flex size-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
             {initials}
           </div>

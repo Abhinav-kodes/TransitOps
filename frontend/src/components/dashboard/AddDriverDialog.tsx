@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { X, AlertCircle, Camera, ChevronDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,13 @@ interface AddDriverDialogProps {
   onCreated: () => void
 }
 
+interface UnlinkedUser {
+  id: number
+  email: string
+}
+
 interface DriverForm {
+  user_id: string
   name: string
   license_no: string
   category: string
@@ -49,7 +55,10 @@ function validateDriverField(name: keyof DriverForm, value: string): string {
 export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverDialogProps) {
   const { t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [unlinkedUsers, setUnlinkedUsers] = useState<UnlinkedUser[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
   const [form, setForm] = useState<DriverForm>({
+    user_id: "",
     name: "",
     license_no: "",
     category: "LMV",
@@ -62,6 +71,21 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    setLoadingUsers(true)
+    const token = localStorage.getItem("transitops-token")
+    fetch(`${API_URL}/api/fleet/drivers/unlinked`, {
+      headers: {
+        ...(token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+      .then((r) => r.json())
+      .then((data) => setUnlinkedUsers(Array.isArray(data) ? data : []))
+      .catch(() => setUnlinkedUsers([]))
+      .finally(() => setLoadingUsers(false))
+  }, [open])
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -90,6 +114,15 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
     }
   }
 
+  const handleUserSelect = (userId: string) => {
+    const user = unlinkedUsers.find((u) => u.id === Number(userId))
+    setForm((prev) => ({
+      ...prev,
+      user_id: userId,
+      name: user ? user.email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : prev.name,
+    }))
+  }
+
   if (!open) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,16 +148,21 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
         ...(token && token !== "skip-mode" ? { Authorization: `Bearer ${token}` } : {}),
       }
 
+      const body: Record<string, unknown> = {
+        name: form.name.trim(),
+        license_no: form.license_no.trim(),
+        category: form.category,
+        expiry_date: form.expiry_date,
+        contact_no: form.contact_no.trim(),
+      }
+      if (form.user_id) {
+        body.user_id = Number(form.user_id)
+      }
+
       const res = await fetch(`${API_URL}/api/fleet/drivers`, {
         method: "POST",
         headers,
-        body: JSON.stringify({
-          name: form.name.trim(),
-          license_no: form.license_no.trim(),
-          category: form.category,
-          expiry_date: form.expiry_date,
-          contact_no: form.contact_no.trim(),
-        }),
+        body: JSON.stringify(body),
       })
 
       if (!res.ok) {
@@ -153,7 +191,7 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
 
       onCreated()
       onClose()
-      setForm({ name: "", license_no: "", category: "LMV", expiry_date: "", contact_no: "" })
+      setForm({ user_id: "", name: "", license_no: "", category: "LMV", expiry_date: "", contact_no: "" })
       setFieldErrors({})
       setTouched({})
       setPhotoPreview(null)
@@ -189,6 +227,31 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {unlinkedUsers.length > 0 && (
+            <div>
+              <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
+                Link to User Account (Optional)
+              </Label>
+              <div className="relative">
+                <select
+                  value={form.user_id}
+                  onChange={(e) => handleUserSelect(e.target.value)}
+                  disabled={loading}
+                  className="h-9 w-full appearance-none rounded border border-zinc-300 bg-white pl-3 pr-8 text-sm text-zinc-900 transition-colors hover:border-zinc-400 focus:border-[#0080FF] focus:outline-none focus:ring-1 focus:ring-[#0080FF] dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-500"
+                >
+                  <option value="">Create standalone driver</option>
+                  {unlinkedUsers.map((u) => (
+                    <option key={u.id} value={u.id}>{u.email}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+              </div>
+              <p className="mt-1 text-[10px] text-zinc-400 dark:text-zinc-500">
+                Select a user with Driver role to link them to this profile.
+              </p>
+            </div>
+          )}
+
           <div>
             <Label className="mb-1.5 block text-xs font-normal text-zinc-600 dark:text-zinc-400">
               {t("driverRegistry.name")} *
@@ -277,7 +340,6 @@ export default function AddDriverDialog({ open, onClose, onCreated }: AddDriverD
             )}
           </div>
 
-          {/* Photo Upload Section */}
           <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 py-5 dark:border-zinc-700 dark:bg-zinc-800/40">
             <input
               ref={fileInputRef}

@@ -29,3 +29,4 @@ class User(SQLModel, table=True):
 
     # Relationships
     role: Role = Relationship(back_populates="users")
+    driver: Optional["Driver"] = Relationship(back_populates="user")

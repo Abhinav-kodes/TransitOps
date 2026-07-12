@@ -4,6 +4,10 @@ interface AuthUser {
   id: number
   email: string
   role: string
+  driverId?: number
+  driverSafetyScore?: number
+  driverStatus?: string
+  driverLicenseNo?: string
 }
 
 interface AuthContextType {
@@ -49,6 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: data.id,
         email: data.email,
         role: data.role_name || "Guest",
+        driverId: data.driver_id || undefined,
+        driverSafetyScore: data.driver_safety_score ?? undefined,
+        driverStatus: data.driver_status || undefined,
+        driverLicenseNo: data.driver_license_no || undefined,
       })
     } catch {
       localStorage.removeItem("transitops-token")

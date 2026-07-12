@@ -43,7 +43,7 @@ class DriverBase(BaseModel):
     safety_score: int = Field(default=100, ge=0, le=100)
 
 class DriverCreate(DriverBase):
-    pass
+    user_id: Optional[int] = None
 
 class DriverUpdate(BaseModel):
     name: Optional[str] = None
@@ -56,6 +56,7 @@ class DriverResponse(DriverBase):
     id: int
     status: DriverStatus
     license_url: Optional[str] = None
+    user_id: Optional[int] = None
 
     class Config:
         from_attributes = True

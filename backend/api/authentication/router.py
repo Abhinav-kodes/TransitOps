@@ -73,6 +73,7 @@ async def register_user(user_in: UserRegister, db: AsyncSession = Depends(get_se
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
+
     return new_user
 
 @router.post("/login", response_model=Token)

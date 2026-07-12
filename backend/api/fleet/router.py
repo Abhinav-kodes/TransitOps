@@ -4,7 +4,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import List, Optional
 
 from api.dependencies import get_db, require_roles
-from packages.db.models.fleet import Vehicle, Driver 
+from packages.db.models.auth import User, Role, RoleName
+from packages.db.models.fleet import Vehicle, Driver
 from api.fleet.schemas import (
     VehicleCreate, VehicleResponse, VehicleUpdate,
     DriverCreate, DriverResponse, DriverUpdate
@@ -86,6 +87,27 @@ async def delete_vehicle(vehicle_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete a vehicle that is currently on a trip.")
     await db.delete(vehicle)
     await db.commit()
+
+# =====================================================================
+# DRIVER REGISTRY ENDPOINTS
+# =====================================================================
+
+@router.get("/drivers/unlinked", response_model=List[dict], dependencies=[Depends(require_roles(ALL_AUTHENTICATED))])
+async def list_unlinked_drivers(db: AsyncSession = Depends(get_db)):
+    """Returns users with Driver role who don't have a linked Driver profile."""
+    # Get all user IDs that are already linked to a driver
+    linked_stmt = select(Driver.user_id).where(Driver.user_id.is_not(None))
+    linked_result = await db.exec(linked_stmt)
+    linked_user_ids = set(linked_result.all())
+
+    # Get all users with Driver role
+    stmt = select(User).join(Role).where(Role.name == RoleName.DRIVER)
+    result = await db.exec(stmt)
+    all_drivers = result.all()
+
+    # Filter to unlinked
+    unlinked = [u for u in all_drivers if u.id not in linked_user_ids]
+    return [{"id": u.id, "email": u.email} for u in unlinked]
 
 # =====================================================================
 # DRIVER REGISTRY ENDPOINTS
