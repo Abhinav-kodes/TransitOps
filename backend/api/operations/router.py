@@ -2,16 +2,55 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from datetime import date
+from typing import List
 
 from api.dependencies import get_db
 from packages.db.models.fleet import Vehicle, Driver
 from packages.db.models.ops import Trip, MaintenanceLog 
 from api.operations.schemas import (
     TripCreate, TripResponse, TripCompletePayload,
-    MaintenanceCreate, MaintenanceResponse
+    MaintenanceCreate, MaintenanceResponse, TripDetailResponse
 )
 
 router = APIRouter()
+
+@router.get("/trips", response_model=List[TripDetailResponse])
+async def list_trips(db: AsyncSession = Depends(get_db)):
+    """Lists all trips in the system with vehicle and driver details."""
+    res = await db.exec(select(Trip))
+    trips = res.all()
+    
+    details = []
+    for trip in trips:
+        driver_name = None
+        if trip.driver_id:
+            driver = await db.get(Driver, trip.driver_id)
+            if driver:
+                driver_name = driver.name
+                
+        vehicle_name = None
+        if trip.vehicle_id:
+            vehicle = await db.get(Vehicle, trip.vehicle_id)
+            if vehicle:
+                vehicle_name = vehicle.name_model or vehicle.reg_no
+                
+        details.append(
+            TripDetailResponse(
+                id=trip.id,
+                trip_code=trip.trip_code,
+                source=trip.source,
+                destination=trip.destination,
+                vehicle_id=trip.vehicle_id,
+                driver_id=trip.driver_id,
+                cargo_weight=trip.cargo_weight,
+                planned_distance=trip.planned_distance,
+                toll_cost=trip.toll_cost,
+                status=trip.status,
+                driver_name=driver_name,
+                vehicle_name=vehicle_name
+            )
+        )
+    return details
 
 # =====================================================================
 # MAINTENANCE WORKFLOWS

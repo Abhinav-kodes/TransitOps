@@ -9,6 +9,40 @@ export default function Header() {
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
 
+  const token = localStorage.getItem("transitops-token")
+  let email = "Guest"
+  let role = "Dispatcher"
+  if (token && token !== "skip-mode") {
+    try {
+      const payloadBase64 = token.split(".")[1]
+      const decodedPayload = JSON.parse(atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/")))
+      email = decodedPayload.sub || "Guest"
+      role = decodedPayload.role || "Dispatcher"
+    } catch (e) {
+      console.error("Failed to decode token", e)
+    }
+  }
+
+  // Format display name and initials
+  let name = "Guest User"
+  let initials = "GU"
+  if (email !== "Guest") {
+    const namePart = email.split("@")[0]
+    name = namePart
+      .split(/[\._-]/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
+    initials = name
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
+      .slice(0, 2)
+      .toUpperCase()
+  } else if (token === "skip-mode") {
+    name = "Demo User"
+    initials = "DU"
+  }
+
   const cycleLang = () => {
     const langs = ["en", "hi"]
     const next = langs[(langs.indexOf(i18n.language) + 1) % langs.length]
@@ -53,12 +87,12 @@ export default function Header() {
         </button>
 
         <div className="ml-2 flex items-center gap-2.5 border-l border-zinc-200 pl-3 dark:border-zinc-800">
-          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Rover K.</span>
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{name}</span>
           <span className="rounded-full bg-[#0080FF]/10 px-2.5 py-0.5 text-[10px] font-semibold text-[#0080FF]">
-            Dispatcher
+            {role}
           </span>
           <div className="flex size-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
-            RK
+            {initials}
           </div>
         </div>
         <button

@@ -48,6 +48,10 @@ class TripResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class TripDetailResponse(TripResponse):
+    driver_name: Optional[str] = None
+    vehicle_name: Optional[str] = None
+
 class TripCompletePayload(BaseModel):
     final_odometer: int = Field(..., ge=0)
     fuel_consumed_liters: float = Field(..., gt=0)
