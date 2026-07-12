@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, Loader2, RefreshCw } from "lucide-react"
+import { ChevronDown, Loader2, Download } from "lucide-react"
 import AddVehicleDialog from "./AddVehicleDialog"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
@@ -14,6 +14,7 @@ interface Vehicle {
   odometer: number
   acq_cost: number
   status: "Available" | "On Trip" | "In Shop" | "Retired"
+  document_url: string | null
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -132,25 +133,26 @@ export default function VehicleRegistryTable() {
               <th className="px-5 py-3 font-medium">{t("registry.odometer")}</th>
               <th className="px-5 py-3 font-medium">{t("registry.acqCost")}</th>
               <th className="px-5 py-3 font-medium">{t("registry.status")}</th>
+              <th className="px-5 py-3 font-medium">{t("registry.document")}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-5 py-12 text-center">
+                <td colSpan={8} className="px-5 py-12 text-center">
                   <Loader2 className="mx-auto size-5 animate-spin text-zinc-400" />
                   <p className="mt-2 text-xs text-zinc-500">Loading vehicles...</p>
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={7} className="px-5 py-12 text-center">
+                <td colSpan={8} className="px-5 py-12 text-center">
                   <p className="text-xs text-red-500">{error}</p>
                 </td>
               </tr>
             ) : vehicles.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-5 py-12 text-center">
+                <td colSpan={8} className="px-5 py-12 text-center">
                   <p className="text-xs text-zinc-500">No vehicles found.</p>
                 </td>
               </tr>
@@ -170,6 +172,22 @@ export default function VehicleRegistryTable() {
                     <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_COLOR[v.status]}`}>
                       {v.status}
                     </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    {v.document_url ? (
+                      <a
+                        href={`${API_URL}/api/documents/file/${v.document_url}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[#0080FF] transition-colors hover:text-[#006ce6]"
+                        title="Download document"
+                      >
+                        <Download className="size-3.5" />
+                        <span className="text-[10px] font-medium">View</span>
+                      </a>
+                    ) : (
+                      <span className="text-[10px] text-zinc-400">-</span>
+                    )}
                   </td>
                 </tr>
               ))

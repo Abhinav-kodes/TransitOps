@@ -80,6 +80,7 @@
     "odometer": "ODOMETER",
     "acqCost": "ACQ. COST",
     "status": "STATUS",
+    "document": "DOCUMENT",
     "systemNote": "Note: Registration No. must be unique • Retired/In Shop vehicles are hidden from Trip Dispatcher",
     "noVehicles": "No vehicles found."
   },
@@ -96,6 +97,7 @@
     "contactNo": "CONTACT NO.",
     "safetyScore": "SAFETY SCORE",
     "photo": "PHOTO",
+    "license": "LICENSE",
     "photoUpload": "Upload photo",
     "photoChange": "Change photo",
     "photoHint": "JPG or PNG, max 5 MB",

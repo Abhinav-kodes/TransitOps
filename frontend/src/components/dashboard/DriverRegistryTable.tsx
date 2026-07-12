@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, RefreshCw } from "lucide-react"
+import { ChevronDown, RefreshCw, Download } from "lucide-react"
 import AddDriverDialog from "./AddDriverDialog"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
@@ -14,6 +14,7 @@ interface Driver {
   contact_no: string
   safety_score: number
   status: string
+  license_url: string | null
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -113,18 +114,19 @@ export default function DriverRegistryTable() {
               <th className="px-5 py-3 font-medium">{t("driverRegistry.contactNo")}</th>
               <th className="px-5 py-3 font-medium">{t("driverRegistry.safetyScore")}</th>
               <th className="px-5 py-3 font-medium">{t("registry.status")}</th>
+              <th className="px-5 py-3 font-medium">{t("driverRegistry.license")}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-5 py-8 text-center text-zinc-400">
+                <td colSpan={8} className="px-5 py-8 text-center text-zinc-400">
                   Loading...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-5 py-8 text-center text-zinc-400">
+                <td colSpan={8} className="px-5 py-8 text-center text-zinc-400">
                   {t("driverRegistry.noDrivers")}
                 </td>
               </tr>
@@ -144,6 +146,22 @@ export default function DriverRegistryTable() {
                     <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_COLOR[d.status] || STATUS_COLOR["Available"]}`}>
                       {d.status}
                     </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    {d.license_url ? (
+                      <a
+                        href={`${API_URL}/api/documents/file/${d.license_url}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[#0080FF] transition-colors hover:text-[#006ce6]"
+                        title="Download license"
+                      >
+                        <Download className="size-3.5" />
+                        <span className="text-[10px] font-medium">View</span>
+                      </a>
+                    ) : (
+                      <span className="text-[10px] text-zinc-400">-</span>
+                    )}
                   </td>
                 </tr>
               ))
