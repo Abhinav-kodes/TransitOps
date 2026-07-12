@@ -1,12 +1,14 @@
-# TransitOps — Smart Transport Operations Platform
+# TransitOps
 
-<div align="center">
-<img src="frontend/src/assets/TT-removebg-preview.png" alt="TransitOps Logo" width="100" />
-<br>
-<strong>Full-stack fleet management platform built in 8 hours</strong>
-<br>
-React 19 · FastAPI · PostgreSQL · MinIO · Docker
-</div>
+### Smart Transport Operations Platform
+
+**Hackathon Duration:** 8 Hours
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#)
+[![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB.svg)](#)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB.svg)](#)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.139-009688.svg)](#)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1.svg)](#)
 
 ---
 
