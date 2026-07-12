@@ -25,3 +25,9 @@ class DashboardAnalyticsResponse(BaseModel):
     vehicle_roi: float
     monthly_revenue: List[MonthlyRevenue]
     top_costliest_vehicles: List[CostliestVehicle]
+    active_vehicles: int
+    available_vehicles: int
+    vehicles_in_maintenance: int
+    active_trips: int
+    pending_trips: int
+    drivers_on_duty: int

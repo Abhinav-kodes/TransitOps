@@ -1,37 +1,22 @@
 import { useState, useEffect } from "react"
-import { useTranslation } from "react-i18next"
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from "recharts"
 import type { DashboardFilters } from "./FilterRibbon"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
-
-interface DailyUtilizationItem {
-  name: string
-  value: number
-}
 
 interface KpiGridProps {
   filters?: DashboardFilters
 }
 
 export default function KpiGrid({ filters }: KpiGridProps) {
-  const { t } = useTranslation()
   const [data, setData] = useState({
-    fleetUtilization: 87.0,
-    onTimeDelivery: 94.1,
-    safetyIncidents: 2,
-    totalTrips: 1284,
-    avgFuelEfficiency: 8.2,
+    activeVehicles: 0,
+    availableVehicles: 0,
+    vehiclesInMaintenance: 0,
+    activeTrips: 0,
+    pendingTrips: 0,
+    driversOnDuty: 0,
+    fleetUtilization: 0,
   })
-  const [dailyData, setDailyData] = useState<DailyUtilizationItem[]>([
-    { name: "Mon", value: 87 },
-    { name: "Tue", value: 92 },
-    { name: "Wed", value: 78 },
-    { name: "Thu", value: 95 },
-    { name: "Fri", value: 88 },
-    { name: "Sat", value: 65 },
-    { name: "Sun", value: 52 },
-  ])
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -45,15 +30,14 @@ export default function KpiGrid({ filters }: KpiGridProps) {
         if (res.ok) {
           const result = await res.json()
           setData({
-            fleetUtilization: result.fleet_utilization,
-            onTimeDelivery: result.on_time_delivery,
-            safetyIncidents: result.safety_incidents,
-            totalTrips: result.total_trips,
-            avgFuelEfficiency: result.avg_fuel_efficiency,
+            activeVehicles: result.active_vehicles ?? 0,
+            availableVehicles: result.available_vehicles ?? 0,
+            vehiclesInMaintenance: result.vehicles_in_maintenance ?? 0,
+            activeTrips: result.active_trips ?? 0,
+            pendingTrips: result.pending_trips ?? 0,
+            driversOnDuty: result.drivers_on_duty ?? 0,
+            fleetUtilization: result.fleet_utilization ?? 0,
           })
-          if (result.daily_utilization) {
-            setDailyData(result.daily_utilization)
-          }
         }
       } catch (err) {
         console.error("Failed to load dashboard KPIs:", err)
@@ -62,54 +46,61 @@ export default function KpiGrid({ filters }: KpiGridProps) {
     fetchAnalytics()
   }, [filters])
 
+  const formatNumber = (num: number) => {
+    return num < 10 ? `0${num}` : String(num)
+  }
+
   const kpis = [
-    { labelKey: "kpi.fleetUtilization", value: `${data.fleetUtilization}%`, change: "+3.2%", positive: true, bar: true },
-    { labelKey: "kpi.onTimeDelivery", value: `${data.onTimeDelivery}%`, change: "+1.8%", positive: true },
-    { labelKey: "kpi.safetyIncidents", value: String(data.safetyIncidents), change: "-4", positive: true },
-    { labelKey: "kpi.totalTrips", value: data.totalTrips.toLocaleString(), change: "+126", positive: true },
-    { labelKey: "kpi.avgFuelEfficiency", value: `${data.avgFuelEfficiency} KM/L`, change: "-0.3", positive: false },
+    {
+      label: "Active Vehicles",
+      value: formatNumber(data.activeVehicles),
+      colorClass: "border-l-4 border-l-[#0080FF] dark:border-l-[#0080FF]",
+    },
+    {
+      label: "Available Vehicles",
+      value: formatNumber(data.availableVehicles),
+      colorClass: "border-l-4 border-l-[#10b981] dark:border-l-[#10b981]",
+    },
+    {
+      label: "Vehicles in Maintenance",
+      value: formatNumber(data.vehiclesInMaintenance),
+      colorClass: "border-l-4 border-l-[#f59e0b] dark:border-l-[#f59e0b]",
+    },
+    {
+      label: "Active Trips",
+      value: formatNumber(data.activeTrips),
+      colorClass: "border-l-4 border-l-[#0080FF] dark:border-l-[#0080FF]",
+    },
+    {
+      label: "Pending Trips",
+      value: formatNumber(data.pendingTrips),
+      colorClass: "border-l-4 border-l-[#0080FF] dark:border-l-[#0080FF]",
+    },
+    {
+      label: "Drivers on Duty",
+      value: formatNumber(data.driversOnDuty),
+      colorClass: "border-l-4 border-l-[#10b981] dark:border-l-[#10b981]",
+    },
+    {
+      label: "Fleet Utilization",
+      value: `${Math.round(data.fleetUtilization)}%`,
+      colorClass: "border-l-4 border-l-[#10b981] dark:border-l-[#10b981]",
+    },
   ]
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-      {kpis.map((kpi) => (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+      {kpis.map((kpi, idx) => (
         <div
-          key={kpi.labelKey}
-          className="rounded border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/40"
+          key={idx}
+          className={`relative overflow-hidden rounded border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 ${kpi.colorClass}`}
         >
-          <span className="mb-1 block text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-            {t(kpi.labelKey)}
+          <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 truncate">
+            {kpi.label}
           </span>
-          <span className="mb-2 block text-2xl font-bold text-zinc-900 dark:text-white">
+          <span className="mt-2 block text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
             {kpi.value}
           </span>
-          <span
-            className={`text-xs font-medium ${
-              kpi.positive ? "text-emerald-600" : "text-red-500"
-            }`}
-          >
-            {kpi.change}
-          </span>
-
-          {kpi.bar && (
-            <div className="mt-3 h-16">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dailyData}>
-                  <XAxis dataKey="name" hide />
-                  <YAxis hide />
-                  <Bar dataKey="value" radius={[2, 2, 0, 0]}>
-                    {dailyData.map((_, i) => (
-                      <Cell
-                        key={i}
-                        fill={i === 3 ? "#0080FF" : "#e4e4e7"}
-                        className="dark:fill-zinc-700"
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
         </div>
       ))}
     </div>

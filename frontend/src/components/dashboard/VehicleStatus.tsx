@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
-import type { DashboardFilters } from "./FilterRibbon"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
@@ -11,17 +9,13 @@ interface StatusItem {
   color: string
 }
 
-interface VehicleStatusProps {
-  filters?: DashboardFilters
-}
-
-export default function VehicleStatus({ filters }: VehicleStatusProps) {
+export default function VehicleStatus() {
   const { t } = useTranslation()
   const [statuses, setStatuses] = useState<StatusItem[]>([
-    { labelKey: "available", count: 42, color: "#10b981" },
-    { labelKey: "onTrip", count: 53, color: "#0080FF" },
-    { labelKey: "inShop", count: 5, color: "#f59e0b" },
-    { labelKey: "retired", count: 2, color: "#d4d4d8" },
+    { labelKey: "available", count: 42, color: "bg-emerald-500" },
+    { labelKey: "onTrip", count: 53, color: "bg-[#0080FF]" },
+    { labelKey: "inShop", count: 5, color: "bg-amber-500" },
+    { labelKey: "retired", count: 2, color: "bg-rose-400" },
   ])
 
   useEffect(() => {
@@ -37,10 +31,10 @@ export default function VehicleStatus({ filters }: VehicleStatusProps) {
           const data = await res.json()
           const counts = data.vehicle_status_counts || {}
           setStatuses([
-            { labelKey: "available", count: counts["Available"] ?? 0, color: "#10b981" },
-            { labelKey: "onTrip", count: counts["On Trip"] ?? 0, color: "#0080FF" },
-            { labelKey: "inShop", count: counts["In Shop"] ?? 0, color: "#f59e0b" },
-            { labelKey: "retired", count: counts["Retired"] ?? 0, color: "#d4d4d8" },
+            { labelKey: "available", count: counts["Available"] ?? 0, color: "bg-emerald-500" },
+            { labelKey: "onTrip", count: counts["On Trip"] ?? 0, color: "bg-[#0080FF]" },
+            { labelKey: "inShop", count: counts["In Shop"] ?? 0, color: "bg-amber-500" },
+            { labelKey: "retired", count: counts["Retired"] ?? 0, color: "bg-rose-400" },
           ])
         }
       } catch (err) {
@@ -48,46 +42,41 @@ export default function VehicleStatus({ filters }: VehicleStatusProps) {
       }
     }
     fetchStatusCounts()
-  }, [filters])
+  }, [])
+
+  // Calculate total vehicles to get percentages for the progress bars
+  const totalCount = statuses.reduce((acc, curr) => acc + curr.count, 0) || 1
 
   return (
     <div className="rounded border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/40">
-      <span className="mb-4 block text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-        {t("vehicleStatus")}
+      <span className="mb-6 block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+        Vehicle Status
       </span>
 
-      <div className="flex items-center gap-6">
-        <div className="size-28 shrink-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={statuses}
-                dataKey="count"
-                cx="50%"
-                cy="50%"
-                innerRadius={28}
-                outerRadius={48}
-                strokeWidth={0}
-              >
-                {statuses.map((s) => (
-                  <Cell key={s.labelKey} fill={s.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+      <div className="space-y-4">
+        {statuses.map((s) => {
+          const percent = Math.max(2, (s.count / totalCount) * 100)
+          
+          return (
+            <div key={s.labelKey} className="flex items-center justify-between gap-4">
+              <span className="w-16 text-xs font-semibold text-zinc-700 dark:text-zinc-300 capitalize">
+                {t(s.labelKey)}
+              </span>
 
-        <div className="flex-1 space-y-2.5">
-          {statuses.map((s) => (
-            <div key={s.labelKey} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="size-2 rounded-full" style={{ backgroundColor: s.color }} />
-                <span className="text-xs text-zinc-600 dark:text-zinc-400">{t(s.labelKey)}</span>
+              {/* Progress track */}
+              <div className="h-2.5 flex-1 overflow-hidden rounded bg-zinc-100 dark:bg-zinc-800/80">
+                <div
+                  className={`h-full rounded transition-all duration-500 ${s.color}`}
+                  style={{ width: `${percent}%` }}
+                />
               </div>
-              <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200">{s.count}</span>
+
+              <span className="w-6 text-right text-xs font-mono font-semibold text-zinc-800 dark:text-zinc-200">
+                {s.count}
+              </span>
             </div>
-          ))}
-        </div>
+          )
+        })}
       </div>
     </div>
   )

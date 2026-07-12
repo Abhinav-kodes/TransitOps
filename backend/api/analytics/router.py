@@ -37,12 +37,37 @@ async def get_dashboard_analytics(db: AsyncSession = Depends(get_db)):
     total_trips_res = await db.exec(select(func.count(Trip.id)))
     total_trips = total_trips_res.first() or 0
     
-    # 4. On-Time Delivery Rate (Calculated based on completed trips vs total)
     completed_trips_res = await db.exec(
         select(func.count(Trip.id)).where(Trip.status == "Completed")
     )
     completed_trips = completed_trips_res.first() or 0
     on_time_delivery = (completed_trips / total_trips * 100) if total_trips > 0 else 100.0
+
+    # Dashboard-specific metric queries
+    available_vehicles_res = await db.exec(
+        select(func.count(Vehicle.id)).where(Vehicle.status == VehicleStatus.AVAILABLE)
+    )
+    available_vehicles = available_vehicles_res.first() or 0
+
+    maint_vehicles_res = await db.exec(
+        select(func.count(Vehicle.id)).where(Vehicle.status == VehicleStatus.IN_SHOP)
+    )
+    vehicles_in_maintenance = maint_vehicles_res.first() or 0
+
+    active_trips_res = await db.exec(
+        select(func.count(Trip.id)).where(Trip.status == "Dispatched")
+    )
+    active_trips = active_trips_res.first() or 0
+
+    pending_trips_res = await db.exec(
+        select(func.count(Trip.id)).where(Trip.status == "Draft")
+    )
+    pending_trips = pending_trips_res.first() or 0
+
+    drivers_on_duty_res = await db.exec(
+        select(func.count(Driver.id)).where(Driver.status.in_([DriverStatus.AVAILABLE, DriverStatus.ON_TRIP]))
+    )
+    drivers_on_duty = drivers_on_duty_res.first() or 0
     
     # 5. Average Fuel Efficiency (Odometer / Fuel Liters)
     total_odometer_res = await db.exec(select(func.sum(Vehicle.odometer)))
@@ -145,5 +170,11 @@ async def get_dashboard_analytics(db: AsyncSession = Depends(get_db)):
         operational_cost=round(operational_cost, 2),
         vehicle_roi=round(vehicle_roi, 1),
         monthly_revenue=monthly_revenue,
-        top_costliest_vehicles=top_costliest
+        top_costliest_vehicles=top_costliest,
+        active_vehicles=active_vehicles,
+        available_vehicles=available_vehicles,
+        vehicles_in_maintenance=vehicles_in_maintenance,
+        active_trips=active_trips,
+        pending_trips=pending_trips,
+        drivers_on_duty=drivers_on_duty
     )
