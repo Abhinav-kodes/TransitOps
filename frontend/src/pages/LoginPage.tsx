@@ -275,16 +275,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   : (isSignUp ? "Sign Up" : t("login.loginButton"))}
               </Button>
 
-              {!isSignUp && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={loading}
-                  className="mt-3 h-10 w-full rounded border-zinc-300 bg-white text-sm font-medium text-zinc-800 shadow-none hover:bg-zinc-50"
-                >
-                  {t("login.ssoButton")}
-                </Button>
-              )}
+
             </form>
 
             <p className="mt-6 block text-center text-xs text-zinc-500">

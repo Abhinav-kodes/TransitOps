@@ -6,12 +6,17 @@ import KpiGrid from "@/components/dashboard/KpiGrid"
 import RecentTrips from "@/components/dashboard/RecentTrips"
 import VehicleStatus from "@/components/dashboard/VehicleStatus"
 
-export default function DashboardPage() {
+interface DashboardPageProps {
+  activePage: string
+  onNavigate: (page: string) => void
+}
+
+export default function DashboardPage({ activePage, onNavigate }: DashboardPageProps) {
   const { t } = useTranslation()
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      <Sidebar activePage={activePage} onNavigate={onNavigate} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-950">
