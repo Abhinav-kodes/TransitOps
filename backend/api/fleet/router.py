@@ -39,6 +39,7 @@ async def create_vehicle(vehicle_in: VehicleCreate, db: AsyncSession = Depends(g
 async def list_vehicles(
     status_filter: Optional[str] = Query(None, alias="status"),
     type_filter: Optional[str] = Query(None, alias="type"),
+    search: Optional[str] = Query(None, alias="search"),
     db: AsyncSession = Depends(get_db)
 ):
     """Fetches list of vehicles. Supports filtering for dispatch selection drops."""
@@ -47,6 +48,8 @@ async def list_vehicles(
         stmt = stmt.where(Vehicle.status == status_filter)
     if type_filter:
         stmt = stmt.where(Vehicle.type == type_filter)
+    if search:
+        stmt = stmt.where(Vehicle.reg_no.ilike(f"%{search}%"))
         
     result = await db.exec(stmt)
     return result.all()
