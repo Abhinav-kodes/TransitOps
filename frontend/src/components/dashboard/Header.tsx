@@ -10,7 +10,7 @@ export default function Header() {
   const navigate = useNavigate()
 
   const cycleLang = () => {
-    const langs = ["en", "es"]
+    const langs = ["en", "hi"]
     const next = langs[(langs.indexOf(i18n.language) + 1) % langs.length]
     i18n.changeLanguage(next)
     localStorage.setItem("transitops-lang", next)
@@ -21,7 +21,7 @@ export default function Header() {
     navigate("/login")
   }
 
-  const langLabel = i18n.language === "es" ? "ES" : "EN"
+  const langLabel = i18n.language === "hi" ? "HI" : "EN"
 
   return (
     <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-zinc-200 bg-white/80 px-6 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">

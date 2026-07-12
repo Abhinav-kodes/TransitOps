@@ -120,14 +120,14 @@ export default function LoginPage() {
   }
 
   const cycleLang = () => {
-    const langs = ["en", "es"]
+    const langs = ["en", "hi"]
     const current = i18n.language
     const next = langs[(langs.indexOf(current) + 1) % langs.length]
     i18n.changeLanguage(next)
     localStorage.setItem("transitops-lang", next)
   }
 
-  const langLabel = i18n.language === "es" ? "ES" : "EN"
+  const langLabel = i18n.language === "hi" ? "HI" : "EN"
 
   return (
     <div className="flex min-h-screen">
