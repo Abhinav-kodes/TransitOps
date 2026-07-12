@@ -36,7 +36,7 @@ const FEATURES = [
   "Lower operational costs, analyze fuel consumption, and prevent unauthorized usage with granular RBAC.",
 ]
 
-const PUBLIC_ROLES = ["Fleet Manager", "Dispatcher", "Safety Officer", "Financial Analyst"]
+const PUBLIC_ROLES = ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst", "Admin"]
 
 export default function LoginPage() {
   const { t } = useTranslation()

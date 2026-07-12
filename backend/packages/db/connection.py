@@ -36,7 +36,7 @@ async def init_db() -> None:
     from sqlmodel import select
     
     async with AsyncSessionLocal() as session:
-        required_roles = [RoleName.FLEET_MANAGER, RoleName.DISPATCHER, RoleName.DRIVER, RoleName.ADMIN]
+        required_roles = [RoleName.FLEET_MANAGER, RoleName.DISPATCHER, RoleName.DRIVER, RoleName.SAFETY_OFFICER, RoleName.FINANCIAL_ANALYST, RoleName.ADMIN]
         for role_name in required_roles:
             result = await session.exec(select(Role).where(Role.name == role_name))
             existing = result.first()
