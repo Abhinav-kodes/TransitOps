@@ -172,12 +172,9 @@ export default function LoginPage() {
 
       <div className="flex w-full flex-col bg-white lg:w-1/2">
         <div className="flex items-center justify-between px-12 py-5 lg:px-20">
-          <div className="flex items-center gap-2.5">
-            <img src={geminiLogo} alt="TransitOps" className="h-8 w-8 rounded-lg object-contain" />
-            <span className="text-2xl font-black tracking-tighter text-black">
-              {t("app")}
-            </span>
-          </div>
+          <span className="text-2xl font-black tracking-tighter text-black">
+            {t("app")}
+          </span>
           <button
             onClick={cycleLang}
             className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-800"
