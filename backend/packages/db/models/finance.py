@@ -1,3 +1,4 @@
+import datetime
 from decimal import Decimal
 from typing import Optional
 from sqlmodel import SQLModel, Field, Relationship
@@ -12,7 +13,7 @@ class FuelLog(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     vehicle_id: int = Field(foreign_key="vehicles.id", index=True, nullable=False)
-    date: str = Field(nullable=False)
+    date: datetime.date = Field(nullable=False)
     liters: Decimal = Field(sa_column=SaColumn(Numeric(6, 2), nullable=False))
     fuel_cost: Decimal = Field(sa_column=SaColumn(Numeric(10, 2), nullable=False))
 
