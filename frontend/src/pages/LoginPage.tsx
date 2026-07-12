@@ -15,7 +15,7 @@ import {
 import i18n from "@/lib/i18n"
 import { useAuth } from "@/lib/auth"
 import loginBadges from "@/assets/login_badges.webp"
-import geminiLogo from "@/assets/Gemini_Generated_Image_met9fmmet9fmmet9.png"
+import geminiLogo from "@/assets/TT-removebg-preview.png"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 

@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Truck, Users, Map, Wrench, Fuel, BarChart3, Settings
 } from "lucide-react"
 import { useAuth } from "@/lib/auth"
-import geminiLogo from "@/assets/Gemini_Generated_Image_met9fmmet9fmmet9.png"
+import geminiLogo from "@/assets/TT-removebg-preview.png"
 
 const NAV = [
   { labelKey: "sidebar.dashboard", icon: <LayoutDashboard className="size-4" />, path: "/dashboard", roles: ["Fleet Manager", "Dispatcher", "Driver", "Safety Officer", "Financial Analyst"] },
